@@ -433,6 +433,15 @@ public sealed partial class MainWindow
     /// </summary>
     private void EditAutomation()
     {
+        // An overlay is the only thing with somewhere to move to - a spine
+        // element is the whole frame - so what is under the cursor decides
+        // which question you are being asked, and the title says which.
+        if (OverlayUnderCursor() is { } item)
+        {
+            EditOverlayAutomation(item);
+            return;
+        }
+
         if (_session.Map.Locate(_cursor.ProgrammeTime)?.Element is not { } element)
         {
             Announce("nothing under the cursor to automate", urgent: true);
@@ -504,6 +513,143 @@ public sealed partial class MainWindow
 
                 Announce(shape.Describe(), urgent: true);
             });
+    }
+
+    /// <summary>
+    /// The overlay item under the cursor on the focused track, if the focused
+    /// track carries overlays at all. The programme track never does.
+    /// </summary>
+    private OverlayItem? OverlayUnderCursor()
+    {
+        if (_cursor.FocusedTrack is not { } trackId) return null;
+        if (Project.TrackOf(trackId) is not { Kind: not TrackKind.Programme }) return null;
+
+        var map = _session.Map;
+
+        return Project.ItemsOn(trackId).FirstOrDefault(item =>
+        {
+            if (map.ResolveAnchor(item.Start) is not { } start) return false;
+
+            var end = item.End is { } anchor
+                ? map.ResolveAnchor(anchor)
+                : start + (item.Length ?? 0);
+
+            return end is not null
+                   && _cursor.ProgrammeTime >= start
+                   && _cursor.ProgrammeTime < end;
+        });
+    }
+
+    /// <summary>
+    /// Position and opacity over the life of an overlay - a lower third that
+    /// slides in from the left, a graphic that fades up and holds.
+    ///
+    /// Offered as movements rather than as axes and numbers. "Slide in from the
+    /// left" is a decision; "horizontal position, ramp, 0 to 50 percent over 0.6
+    /// seconds" is the same thing said in a way you would have to translate.
+    /// </summary>
+    private void EditOverlayAutomation(OverlayItem item)
+    {
+        var existing = item.Automation.Count == 0
+            ? null
+            : string.Join(", ", item.Automation.Select(a => a.Describe()));
+
+        var options = new List<string>
+        {
+            "Fade it up as it appears",
+            "Fade it out as it goes",
+            "Slide in from the left",
+            "Slide in from the right",
+            "Rise up into place",
+            "Hold it half transparent",
+        };
+
+        if (existing is not null) options.Add($"Remove it all - currently {existing}");
+
+        ChooseFromList(
+            existing is null
+                ? $"Movement for {item.Describe()}"
+                : $"{item.Describe()}: {existing}",
+            options,
+            choice =>
+            {
+                var length = Math.Max(0.3, Math.Min(item.Length ?? 1, 0.6));
+
+                if (choice >= 6)
+                {
+                    item.Automation.Clear();
+                    _dirty = true;
+                    Refresh();
+                    Announce($"cleared the movement on {item.Describe()}", urgent: true);
+                    return;
+                }
+
+                // One shape per axis: a second on the same axis would be two
+                // people moving the same thing, and the result would depend on
+                // order rather than on intent.
+                var (target, shape) = Movement(choice, item, length);
+
+                item.Automation.RemoveAll(a => a.Target == target);
+                item.Automation.Add(shape);
+
+                _dirty = true;
+                Refresh();
+
+                Announce(shape.Describe(), urgent: true);
+            });
+    }
+
+    private static (AutomationTarget Target, Automation Shape) Movement(
+        int choice,
+        OverlayItem item,
+        double length)
+    {
+        var (x, y) = item is TitleItem title
+            ? title.Placement.Resolve()
+            : (0.5, 0.5);
+
+        return choice switch
+        {
+            0 => (AutomationTarget.Opacity, new Automation
+            {
+                Target = AutomationTarget.Opacity,
+                Shape = AutomationShape.Ramp, From = 0, To = 100, Length = length,
+            }),
+
+            1 => (AutomationTarget.Opacity, new Automation
+            {
+                Target = AutomationTarget.Opacity,
+                Shape = AutomationShape.Ramp, From = 100, To = 0,
+                Length = length,
+                Delay = Math.Max(0, (item.Length ?? length * 3) - length),
+            }),
+
+            // Off the edge of the frame to where it belongs, so the slide ends
+            // exactly where the placement said it would sit.
+            2 => (AutomationTarget.PositionX, new Automation
+            {
+                Target = AutomationTarget.PositionX,
+                Shape = AutomationShape.EaseOut, From = -20, To = x * 100, Length = length,
+            }),
+
+            3 => (AutomationTarget.PositionX, new Automation
+            {
+                Target = AutomationTarget.PositionX,
+                Shape = AutomationShape.EaseOut, From = 120, To = x * 100, Length = length,
+            }),
+
+            4 => (AutomationTarget.PositionY, new Automation
+            {
+                Target = AutomationTarget.PositionY,
+                Shape = AutomationShape.EaseOut, From = y * 100 + 12, To = y * 100, Length = length,
+            }),
+
+            _ => (AutomationTarget.Opacity, new Automation
+            {
+                Target = AutomationTarget.Opacity,
+                Shape = AutomationShape.Steady, From = 50, To = 50,
+            }),
+        };
     }
 
     // ---- output -----------------------------------------------------------

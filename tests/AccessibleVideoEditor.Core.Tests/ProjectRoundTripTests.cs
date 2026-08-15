@@ -109,6 +109,29 @@ public class ProjectRoundTripTests : IDisposable
         project.Spine[0].Effects.Add(AudioEffect.Of(AudioEffectKind.DeEss, 0.7));
         project.Spine[0].Automation.Add(Automation.Duck(0, -18, 4));
 
+        var title = new TitleItem
+        {
+            Id = Ids.NewItem(),
+            Track = project.Tracks.First(t => t.Kind == TrackKind.Graphics).Id,
+            Start = new TimeAnchor(project.Spine[0].Id, 0),
+            Length = 4,
+            Text = "Cody Hurst",
+        };
+
+        title.Automation.Add(new Automation
+        {
+            Target = AutomationTarget.PositionX,
+            Shape = AutomationShape.EaseOut, From = -20, To = 50, Length = 0.6,
+        });
+
+        title.Automation.Add(new Automation
+        {
+            Target = AutomationTarget.Opacity,
+            Shape = AutomationShape.Ramp, From = 0, To = 100, Length = 0.4,
+        });
+
+        project.Overlays.Add(title);
+
         return project;
     }
 
@@ -157,6 +180,18 @@ public class ProjectRoundTripTests : IDisposable
         Assert.Equal(AutomationShape.Dip, automation.Shape);
         Assert.Equal(-18, automation.To, 3);
         Assert.Equal(4, automation.Length, 3);
+
+        // Position and opacity live on the overlay, because an overlay is the
+        // only thing with somewhere to move to.
+        var title = after.Overlays.OfType<TitleItem>().Single();
+        Assert.Equal(2, title.Automation.Count);
+
+        var slide = title.Automation.Single(a => a.Target == AutomationTarget.PositionX);
+        Assert.Equal(AutomationShape.EaseOut, slide.Shape);
+        Assert.Equal(-20, slide.From, 3);
+        Assert.Equal(50, slide.To, 3);
+
+        Assert.Contains(title.Automation, a => a.Target == AutomationTarget.Opacity);
     }
 
     [Fact]

@@ -37,6 +37,17 @@ public abstract class OverlayItem
     /// <summary>Set this or <see cref="End"/>, not both.</summary>
     public double? Length { get; set; }
 
+    /// <summary>
+    /// Position and opacity over the life of this item - a lower third that
+    /// slides in, a graphic that fades up. Named shapes rather than keyframes;
+    /// see <see cref="Automation"/>.
+    ///
+    /// Position lives here rather than on the spine because an overlay is the
+    /// only thing that has somewhere to move to: a spine element is the whole
+    /// frame.
+    /// </summary>
+    public List<Automation> Automation { get; set; } = [];
+
     public abstract string Describe();
 
     public bool IsWellFormed() => End.HasValue ^ Length.HasValue;

@@ -10,7 +10,13 @@ public static class AboutInfo
 {
     public const string Name = "Accessible Video Editor";
 
-    public const string Version = "0.13.0";
+    /// <summary>
+    /// The minor number is the highest phase built, so the version says how far
+    /// through the roadmap this is rather than being a number that goes up.
+    /// It stays below 1.0 until the criteria in ROADMAP.md are met - the
+    /// deciding one being that a whole video has been cut and published with it.
+    /// </summary>
+    public const string Version = "0.16.0";
 
     public const string Tagline =
         "A video editor where a blind editor is the primary user, not an afterthought.";

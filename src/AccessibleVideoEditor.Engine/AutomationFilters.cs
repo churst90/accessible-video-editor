@@ -6,11 +6,11 @@ namespace AccessibleVideoEditor.Engine;
 /// <summary>
 /// Turns a named automation shape into an ffmpeg expression.
 ///
-/// ffmpeg's <c>volume</c> filter takes an expression evaluated per sample, with
-/// <c>t</c> as the time in seconds, so a shape becomes arithmetic rather than a
-/// list of points. That is the whole reason the model stores shapes: a curve
-/// would have to be flattened into keyframes and interpolated by hand, and this
-/// does not.
+/// Both filters this targets - <c>volume</c> for sound and <c>drawtext</c> for
+/// titles - evaluate their parameters per frame with <c>t</c> as the time in
+/// seconds, so a shape becomes arithmetic rather than a list of points. That is
+/// the whole reason the model stores shapes: a curve would have to be flattened
+/// into keyframes and interpolated by hand, and this does not.
 /// </summary>
 public static class AutomationFilters
 {
@@ -30,20 +30,64 @@ public static class AutomationFilters
     }
 
     /// <summary>
-    /// The shape as an expression in <c>t</c>, returning a linear gain rather
-    /// than decibels because that is what the volume filter multiplies by.
+    /// The alpha expression for an overlay, or null when its opacity is not
+    /// automated. <paramref name="startsAt"/> is the item's programme start,
+    /// because an overlay is drawn onto the finished timeline while a segment is
+    /// rendered as its own file beginning at zero.
     /// </summary>
-    public static string Expression(Automation shape, double duration)
+    public static string? Opacity(IReadOnlyList<Automation> automation, double duration, double startsAt)
     {
+        var shape = automation.FirstOrDefault(a => a.Target == AutomationTarget.Opacity);
+
+        // Percent to a 0-1 alpha, then clamped: drawtext silently misbehaves
+        // outside that range rather than complaining.
+        return shape is null
+            ? null
+            : $"clip({Expression(shape, duration, startsAt, Percent)},0,1)";
+    }
+
+    /// <summary>
+    /// The horizontal or vertical placement expression, as a fraction of the
+    /// frame, or null when that axis is not automated.
+    /// </summary>
+    public static string? Position(
+        IReadOnlyList<Automation> automation,
+        bool horizontal,
+        double duration,
+        double startsAt)
+    {
+        var target = horizontal ? AutomationTarget.PositionX : AutomationTarget.PositionY;
+        var shape = automation.FirstOrDefault(a => a.Target == target);
+
+        return shape is null ? null : Expression(shape, duration, startsAt, Percent);
+    }
+
+    /// <summary>
+    /// The shape as an expression in <c>t</c>.
+    ///
+    /// <paramref name="convert"/> maps the stored value into whatever unit the
+    /// filter multiplies by - decibels become a linear gain for
+    /// <c>volume</c>, percentages become fractions for <c>drawtext</c>. Getting
+    /// that wrong is inaudibly small at one end and catastrophic at the other,
+    /// so it is a parameter rather than an assumption.
+    /// </summary>
+    public static string Expression(
+        Automation shape,
+        double duration,
+        double startsAt = 0,
+        Func<double, double>? convert = null)
+    {
+        convert ??= Gain;
+
         var span = shape.Length > 0 ? shape.Length : Math.Max(0.001, duration - shape.Delay);
-        var delay = shape.Delay;
+        var begins = startsAt + shape.Delay;
 
         // Progress through the shape, clamped, so the value holds at each end
         // rather than running off.
-        var t = $"clip((t-{N(delay)})/{N(span)},0,1)";
+        var t = $"clip((t-{N(begins)})/{N(span)},0,1)";
 
-        var from = Gain(shape.From);
-        var to = Gain(shape.To);
+        var from = convert(shape.From);
+        var to = convert(shape.To);
 
         return shape.Shape switch
         {
@@ -70,6 +114,9 @@ public static class AutomationFilters
 
     /// <summary>Decibels to a linear multiplier, which is what volume wants.</summary>
     private static double Gain(double decibels) => Math.Pow(10, decibels / 20);
+
+    /// <summary>Percent to a fraction, which is what a placement wants.</summary>
+    private static double Percent(double percent) => percent / 100;
 
     private static string N(double value) =>
         value.ToString("0.######", CultureInfo.InvariantCulture);

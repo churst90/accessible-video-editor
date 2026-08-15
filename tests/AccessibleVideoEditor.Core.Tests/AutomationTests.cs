@@ -1,4 +1,5 @@
 using AccessibleVideoEditor.Core.Model;
+using AccessibleVideoEditor.Core.Timeline;
 using AccessibleVideoEditor.Engine;
 
 namespace AccessibleVideoEditor.Core.Tests;
@@ -159,6 +160,187 @@ public class AutomationTests
 
         Assert.Contains("2.5", expression);
         Assert.DoesNotContain("2,5", expression);
+    }
+
+    // ---- position and opacity on an overlay ------------------------------
+
+    [Fact]
+    public void Opacity_is_a_fraction_because_that_is_what_drawtext_wants()
+    {
+        // Stored as a percentage, because that is what a person says. drawtext
+        // wants 0 to 1, and passing 50 straight through would be silently
+        // fully opaque rather than half.
+        var alpha = AutomationFilters.Opacity(
+            [new Automation
+            {
+                Target = AutomationTarget.Opacity,
+                Shape = AutomationShape.Steady, To = 50,
+            }],
+            duration: 4,
+            startsAt: 0)!;
+
+        Assert.Contains("0.5", alpha);
+    }
+
+    [Fact]
+    public void Opacity_is_clamped_because_drawtext_misbehaves_outside_zero_to_one()
+    {
+        var alpha = AutomationFilters.Opacity(
+            [new Automation
+            {
+                Target = AutomationTarget.Opacity,
+                Shape = AutomationShape.Ramp, From = 0, To = 100, Length = 1,
+            }],
+            duration: 4,
+            startsAt: 0)!;
+
+        Assert.StartsWith("clip(", alpha);
+    }
+
+    [Fact]
+    public void An_overlays_time_is_offset_by_where_it_starts_on_the_timeline()
+    {
+        // A segment renders as its own file beginning at zero; an overlay is
+        // drawn onto the finished timeline. Ignoring that would make every
+        // title animate at the top of the video instead of at its own start.
+        var shape = new Automation
+        {
+            Target = AutomationTarget.Opacity,
+            Shape = AutomationShape.Ramp, From = 0, To = 100, Length = 1,
+        };
+
+        var atZero = AutomationFilters.Opacity([shape], 4, startsAt: 0)!;
+        var later = AutomationFilters.Opacity([shape], 4, startsAt: 12)!;
+
+        Assert.Contains("t-0", atZero);
+        Assert.Contains("t-12", later);
+    }
+
+    [Fact]
+    public void A_delay_adds_to_where_the_overlay_starts_rather_than_replacing_it()
+    {
+        var shape = new Automation
+        {
+            Target = AutomationTarget.Opacity,
+            Shape = AutomationShape.Ramp, From = 100, To = 0, Length = 0.5, Delay = 2,
+        };
+
+        Assert.Contains("t-14", AutomationFilters.Opacity([shape], 4, startsAt: 12)!);
+    }
+
+    [Fact]
+    public void Each_axis_is_asked_for_separately_and_is_null_when_unset()
+    {
+        var horizontalOnly = new[]
+        {
+            new Automation
+            {
+                Target = AutomationTarget.PositionX,
+                Shape = AutomationShape.EaseOut, From = -20, To = 10, Length = 0.6,
+            },
+        };
+
+        Assert.NotNull(AutomationFilters.Position(horizontalOnly, horizontal: true, 3, 0));
+        Assert.Null(AutomationFilters.Position(horizontalOnly, horizontal: false, 3, 0));
+    }
+
+    [Fact]
+    public void An_overlay_with_no_automation_asks_for_nothing()
+    {
+        Assert.Null(AutomationFilters.Opacity([], 3, 0));
+        Assert.Null(AutomationFilters.Position([], horizontal: true, 3, 0));
+    }
+
+    [Fact]
+    public void An_automated_title_puts_its_expressions_into_the_drawtext()
+    {
+        var project = Project.CreateDefault("titles");
+        project.Settings.SpanPadIn = 0;
+        project.Settings.SpanPadOut = 0;
+        project.Settings.JumpCutDuration = 0;
+        project.Settings.SceneTransitionDuration = 0;
+
+        var source = new Source { Id = Ids.NewSource(), Path = "take.mkv", Duration = 60 };
+        project.Sources.Add(source);
+
+        project.Spine.Add(new SpanElement
+        {
+            Id = Ids.NewElement(), Source = source.Id, SourceIn = 0, SourceOut = 10, Text = "hello",
+        });
+
+        var title = new TitleItem
+        {
+            Id = Ids.NewItem(),
+            Track = project.Tracks.First(t => t.Kind == TrackKind.Graphics).Id,
+            Start = new TimeAnchor(project.Spine[0].Id, 0),
+            Length = 4,
+            Text = "Cody Hurst",
+        };
+
+        title.Automation.Add(new Automation
+        {
+            Target = AutomationTarget.Opacity,
+            Shape = AutomationShape.Ramp, From = 0, To = 100, Length = 0.5,
+        });
+
+        title.Automation.Add(new Automation
+        {
+            Target = AutomationTarget.PositionX,
+            Shape = AutomationShape.EaseOut, From = -20, To = 50, Length = 0.5,
+        });
+
+        project.Overlays.Add(title);
+
+        var filter = OverlayFilters.Video(project, TimelineMap.Build(project), 1920, 1080, "/tmp/f.ttf")!;
+
+        Assert.Contains("alpha=", filter);
+        Assert.Contains("clip(", filter);
+
+        // The x expression must still centre the text on the moving point.
+        Assert.Contains("(text_w/2)", filter);
+    }
+
+    [Fact]
+    public void A_title_with_no_automation_keeps_a_plain_placement()
+    {
+        // No expression machinery on the overwhelmingly common case.
+        var project = Project.CreateDefault("plain");
+        var source = new Source { Id = Ids.NewSource(), Path = "take.mkv", Duration = 60 };
+        project.Sources.Add(source);
+
+        project.Spine.Add(new SpanElement
+        {
+            Id = Ids.NewElement(), Source = source.Id, SourceIn = 0, SourceOut = 10, Text = "hello",
+        });
+
+        project.Overlays.Add(new TitleItem
+        {
+            Id = Ids.NewItem(),
+            Track = project.Tracks.First(t => t.Kind == TrackKind.Graphics).Id,
+            Start = new TimeAnchor(project.Spine[0].Id, 0),
+            Length = 4,
+            Text = "Cody Hurst",
+        });
+
+        var filter = OverlayFilters.Video(project, TimelineMap.Build(project), 1920, 1080, "/tmp/f.ttf")!;
+
+        Assert.DoesNotContain("alpha=", filter);
+        Assert.DoesNotContain("clip(", filter);
+    }
+
+    [Fact]
+    public void A_slide_ends_exactly_where_the_placement_said_it_would_sit()
+    {
+        // The point of sliding in: it stops at the position the layer was
+        // given, rather than somewhere near it.
+        var slide = new Automation
+        {
+            Target = AutomationTarget.PositionX,
+            Shape = AutomationShape.EaseOut, From = -20, To = 50, Length = 0.6,
+        };
+
+        Assert.Equal(50, slide.At(0.6, 3), 3);
+        Assert.Equal(50, slide.At(2.9, 3), 3);
     }
 
     [Fact]

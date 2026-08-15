@@ -74,9 +74,9 @@ had been silently missing since they were written.
   `Alt+R` and `Ctrl+Alt+R` all began or ended a take - opening the camera, with
   nothing to see that it had happened. Bare `R` only, now.
 - **`Ctrl+F2` started a master render.** It was documented as export presets,
-  which do not exist; the `F2` case did not exclude Control, so the key fell
+  which did not exist; the `F2` case did not exclude Control, so the key fell
   through to the full render. A long job nobody asked for, and no way to tell it
-  had begun. The key is now inert and reserved.
+  had begun. Export presets have since been built and the key now opens them.
 - **The manual documented `F5` as "render draft".** `F5` arms a track, which
   opens the camera. Worth more than a typo.
 
@@ -125,17 +125,18 @@ no per-tick rebuild.
 
 2. **`StreamView` at 1,083 lines** is heading the same way as the window did.
 
-3. **No keyframes anywhere.** Volume over time and position over time are the
-   two that a finished edit eventually wants.
+3. **The whole of the "missing" list below has since been built** - subclips,
+   compound segments, export presets, audio effects, change over time and
+   multicam. Nothing on it remains.
 
-4. **Subclips, compound segments and export presets have since been built**,
-   along with audio effects, volume over time and multicam. They were the whole
-   of the "missing" list below, which is now empty of everything except
-   keyframed *position*.
+4. **No video has been cut and published with this yet.** It is the largest open
+   item and it is not a code one: everything here is tested, and none of it has
+   survived an actual edit from import to upload. That is the test that finds
+   what nobody thought to assert, and it is the deciding criterion for 1.0.
 
 ## 3. Comments and cleanliness
 
-**31,065 lines of source. 15 percent comments.** The rule applied throughout is
+**31,300 lines of source. 15 percent comments.** The rule applied throughout is
 **a comment keeps the reason and drops the restatement**: where a summary
 elaborated on its own first paragraph, the elaboration went, and doc blocks of
 nine lines or more came down from 91 to 59.
@@ -148,7 +149,7 @@ otherwise be re-litigated.
 
 **Grade: A-.** Consistent naming, no dead code, no `TODO`s, no swallowed
 exceptions that hide a failure from the user, no `.Result` or `.Wait()`
-anywhere, and 787 tests that assert on behaviour and spoken output rather than
+anywhere, and 796 tests that assert on behaviour and spoken output rather than
 on implementation. It is held back from an A by two files that are still larger
 than they should be - and, until this pass, by documentation that described a
 different application from the one in the repository.
@@ -177,7 +178,7 @@ has since been built:
 | **Subclips** | `U` in the bin names the marked range; a reference, not a copy |
 | **Multicam angle switching** | Synced by envelope cross-correlation over the cached waveforms; a digit cuts to an angle |
 | **Audio effects** | Named presets per track and per segment, with measure-then-advise on `Ctrl+F4` |
-| **Keyframes of any kind** | Volume over time, as named shapes rather than points. **Position over time is modelled and not yet exposed** |
+| **Keyframes of any kind** | Named shapes rather than points: volume on a segment, position and opacity on an overlay |
 
 The commands that do exist are coherent: one verb, one key, one announcement,
 one undo entry. The keyboard scheme is documented with provenance for every

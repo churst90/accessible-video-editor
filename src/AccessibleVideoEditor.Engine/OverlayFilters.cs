@@ -42,7 +42,8 @@ public static class OverlayFilters
                         end.Value,
                         width,
                         height,
-                        fontPath));
+                        fontPath,
+                        title.Automation));
                     break;
             }
         }
@@ -97,10 +98,12 @@ public static class OverlayFilters
         double end,
         int width,
         int height,
-        string fontPath)
+        string fontPath,
+        IReadOnlyList<Automation>? automation = null)
     {
         var (x, y) = placement.Resolve();
-        return DrawTextAt(text, x, y, size, start, end, fontPath, bold: true);
+
+        return DrawTextAt(text, x, y, size, start, end, fontPath, bold: true, automation);
     }
 
     /// <summary>
@@ -117,19 +120,39 @@ public static class OverlayFilters
         double start,
         double end,
         string fontPath,
-        bool bold)
+        bool bold,
+        IReadOnlyList<Automation>? automation = null)
     {
         var escaped = Escape(text);
+        var duration = Math.Max(0.001, end - start);
 
-        return $"drawtext=fontfile='{fontPath}'"
-               + $":text='{escaped}'"
-               + $":fontsize={Math.Max(12, size)}"
-               + ":fontcolor=white"
-               + $":borderw={(bold ? 4 : 3)}:bordercolor=black@0.85"
-               + ":shadowx=2:shadowy=2:shadowcolor=black@0.6"
-               + $":x=(w*{Number(x)})-(text_w/2)"
-               + $":y=(h*{Number(y)})-(text_h/2)"
-               + $":enable='between(t,{Number(start)},{Number(end)})'";
+        // drawtext evaluates x, y and alpha per frame with t available, so an
+        // automated placement is the same expression the model already
+        // describes rather than a second mechanism.
+        var horizontal = automation is null
+            ? null
+            : AutomationFilters.Position(automation, horizontal: true, duration, start);
+
+        var vertical = automation is null
+            ? null
+            : AutomationFilters.Position(automation, horizontal: false, duration, start);
+
+        var alpha = automation is null
+            ? null
+            : AutomationFilters.Opacity(automation, duration, start);
+
+        var filter = $"drawtext=fontfile='{fontPath}'"
+                     + $":text='{escaped}'"
+                     + $":fontsize={Math.Max(12, size)}"
+                     + ":fontcolor=white"
+                     + $":borderw={(bold ? 4 : 3)}:bordercolor=black@0.85"
+                     + ":shadowx=2:shadowy=2:shadowcolor=black@0.6"
+                     + $":x=(w*({horizontal ?? Number(x)}))-(text_w/2)"
+                     + $":y=(h*({vertical ?? Number(y)}))-(text_h/2)";
+
+        if (alpha is not null) filter += $":alpha='{alpha}'";
+
+        return filter + $":enable='between(t,{Number(start)},{Number(end)})'";
     }
 
     private static int SizeFor(TitleStyle style, int height) => style switch

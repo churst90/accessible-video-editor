@@ -54,7 +54,7 @@ public static class Menus
 
         bar.AppendSubmenu("_Sound", Section(
             [("audio.effects", "win.audioEffects"), ("audio.advise", "win.audioAdvise")],
-            [("audio.automation", "win.audioAutomation")],
+            [("edit.automation", "win.audioAutomation")],
             [("track.volume", "win.trackVolume"), ("edit.detachAudio", "win.detachAudio")],
             [("edit.mute", "win.mute")]));
 

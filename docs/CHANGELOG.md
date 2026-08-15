@@ -2,6 +2,52 @@
 
 Newest first. Dates are when the work landed.
 
+## 0.16.0 — position and opacity over time, and a version that means something
+
+### Movement on an overlay
+
+`Ctrl+Alt+A` already shaped the volume of a segment. It now also shapes an
+overlay's **position and opacity** — and **what is under the cursor decides which
+question you are asked**, with the title saying which so it is never ambiguous.
+
+An overlay is the only thing with somewhere to move to; a segment is the whole
+frame. That is why position lives there rather than on the spine.
+
+Offered as **movements rather than as axes and numbers** — *slide in from the
+left*, *fade it up as it appears*, *rise up into place*. "Horizontal position,
+ramp, 0 to 50 percent over 0.6 seconds" is the same thing said in a way you would
+have to translate first.
+
+A slide **ends exactly where the placement said the layer would sit**, so
+animating something does not also move it.
+
+`drawtext` takes `x`, `y` and `alpha` as expressions in `t`, so this is the same
+expression the model already produced for volume rather than a second mechanism.
+One thing had to be added: an overlay's time is **offset by where it starts on
+the timeline**, because a segment renders as its own file beginning at zero while
+an overlay is drawn onto the finished programme. Without that every title would
+have animated at the top of the video instead of at its own start.
+
+### Version 0.16.0, and what 1.0 needs
+
+The minor number is now **the highest roadmap phase built**, so the version says
+how far through the plan this is rather than being a number that goes up. All
+sixteen phases are built; 796 tests.
+
+`ROADMAP.md` gains a "where this is" section listing what remains and what 1.0
+would actually require. The deciding criterion is not a feature: **no whole video
+has been cut and published with this yet**, and that is the only test that finds
+what nobody thought to assert.
+
+### The two front-end sketches
+
+`CLIENTS.md` now sketches both heads — a WPF project layout for Windows with the
+UIA announcer and the timeline `AutomationPeer` written out, and an AppKit
+layout for macOS over a JSON-RPC Core, with its
+`NSAccessibilityPriorityLevel` announcement route. Both reuse `CommandRegistry`,
+`TimelineLayout` and `TrackProbe` unchanged: the XAML and the Swift are layout,
+and none of the behaviour is re-decided.
+
 ## Everything the audit said was missing
 
 Six features, all of which the previous pass had found either claimed-but-absent

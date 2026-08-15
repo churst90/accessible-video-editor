@@ -147,3 +147,120 @@ Not accessibility, but real:
   Foundation; macOS needs AVFoundation. Both sit behind the existing interface,
   which is why that interface exists.
 - **`Fonts.cs` looks in Linux font directories.**
+
+---
+
+## Sketch: the Windows head
+
+    src/AccessibleVideoEditor.Wpf/
+      App.xaml, App.xaml.cs         startup, theme, the single window
+      MainWindow.xaml(.cs)          the view host and the status line
+      Announcer.cs                  IAnnouncer over UIA notifications
+      Views/
+        TimelineView.xaml           track headers + the drawn canvas
+        TracksView.xaml             the header list on its own
+        TranscriptView.xaml         RichTextBox over caption words
+        MediaBinView.xaml           sources, subclips, angles
+        StreamView.xaml             scenes, sources, chat per platform
+        ImageView.xaml              the picture editor
+      Controls/
+        TimelineCanvas.cs           custom-drawn, with its AutomationPeer
+        TimelineCanvasPeer.cs       the peer - the load-bearing file
+      Input/
+        KeyRouter.cs                CommandRegistry -> handlers, per view
+      Platform/
+        WindowsCapture.cs           Media Foundation cameras and microphones
+        WindowsTools.cs             where ffmpeg lives, and saying so if it does not
+
+**The announcer** is the whole reason WPF was chosen, and it is about ten lines:
+
+```csharp
+public sealed class UiaAnnouncer(FrameworkElement host) : IAnnouncer
+{
+    public void Say(string text, AnnouncePriority priority = AnnouncePriority.Normal)
+    {
+        var peer = UIElementAutomationPeer.FromElement(host)
+                   ?? UIElementAutomationPeer.CreatePeerForElement(host);
+
+        // MostRecent drops anything queued behind it, which is what an urgent
+        // announcement means; All queues, which is what a normal one means.
+        peer?.RaiseNotificationEvent(
+            AutomationNotificationKind.ActionCompleted,
+            priority is AnnouncePriority.Urgent
+                ? AutomationNotificationProcessing.MostRecent
+                : AutomationNotificationProcessing.All,
+            text,
+            "ave");
+    }
+}
+```
+
+That is a real match for `gtk_accessible_announce`, priority included, and it is
+the single thing MAUI cannot do.
+
+**The timeline peer** is the other half. The canvas is drawn, so it has to
+describe itself:
+
+```csharp
+sealed class TimelineCanvasPeer(TimelineCanvas owner) : FrameworkElementAutomationPeer(owner)
+{
+    protected override AutomationControlType GetAutomationControlTypeCore() =>
+        AutomationControlType.List;
+
+    protected override List<AutomationPeer> GetChildrenCore() =>
+        owner.Tracks.Select(t => (AutomationPeer)new TrackRowPeer(owner, t)).ToList();
+}
+```
+
+**What is reused unchanged**: `CommandRegistry` drives the key router and the
+menus, `TimelineLayout` computes the drawing, `TrackProbe` produces every
+announcement string, and Core/Engine/Audio/Playback are referenced as-is. The
+XAML is layout; none of the behaviour is re-decided.
+
+**Order of work**: the spike (`TimelineCanvas` + peer + announcer), then the
+key router, then the views in the order they are used - timeline, tracks,
+transcript, bin, stream, image.
+
+## Sketch: the macOS head
+
+Two shapes are possible. The second is recommended.
+
+**Either** a Swift/AppKit app talking to a headless Core over JSON-RPC on
+stdio - the seam the architecture always anticipated, and the reason the CLI
+exists:
+
+    macos/AccessibleVideoEditor/
+      AppDelegate.swift, MainWindow.swift
+      Announcer.swift                 NSAccessibility.post(.announcementRequested)
+      TimelineView.swift              NSView + accessibility protocol
+      TimelineRowElement.swift        NSAccessibilityElement per track
+      Core/RpcClient.swift            spawns the Core process, speaks JSON-RPC
+    src/AccessibleVideoEditor.Rpc/    the headless server; a thin shell over Core
+
+**Or** the same AppKit views written in C# through the macOS bindings, which
+keeps one language and loses the clean process boundary.
+
+The announcement route is the direct equivalent:
+
+```swift
+NSAccessibility.post(
+    element: window,
+    notification: .announcementRequested,
+    userInfo: [
+        .announcement: text,
+        .priority: urgent ? NSAccessibilityPriorityLevel.high.rawValue
+                          : NSAccessibilityPriorityLevel.medium.rawValue,
+    ])
+```
+
+`NSAccessibilityPriorityLevel` is why this is worth doing natively: it is the
+only macOS route that carries a priority, and Catalyst does not expose it
+usefully.
+
+The drawn timeline becomes an `NSView` overriding
+`accessibilityChildren()` to return one `NSAccessibilityElement` per track, each
+with `accessibilityLabel` set from `TrackProbe` - structurally the same design as
+the GTK and WPF heads, which is the point.
+
+**This is a sketch, not a plan.** macOS comes after Windows works, and the RPC
+server does not exist yet.

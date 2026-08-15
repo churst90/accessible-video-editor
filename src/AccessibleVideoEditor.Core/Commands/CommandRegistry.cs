@@ -256,8 +256,10 @@ public static class CommandRegistry
         new("audio.advise", "What is wrong with this sound", "Ctrl+F4", CommandGroup.Review,
             KeyOrigin.Invented,
             "Measures the recording and suggests the effects by name."),
-        new("audio.automation", "Volume over time", "Ctrl+Alt+A", CommandGroup.Editing, KeyOrigin.Invented,
-            "Named shapes - duck, ramp, ease - rather than a curve with points on it.",
+        new("edit.automation", "Change over time", "Ctrl+Alt+A", CommandGroup.Editing, KeyOrigin.Invented,
+            "Volume on a segment; position and opacity on an overlay. Named shapes - duck, "
+            + "slide in, fade up - rather than a curve with points on it. What is under the "
+            + "cursor decides which you are asked.",
             Context: CommandContext.Timeline),
 
         // ---- tracks (Tracks pane; plain letters are safe there) ----------------

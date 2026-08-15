@@ -316,7 +316,7 @@ The ladder, coarse to fine:
 | `Ctrl+Shift+G` | Group the marked segments under a name |
 | `Ctrl+Alt+G` | The group list — collapse, rename, ungroup, delete |
 | `Ctrl+Alt+E` | Audio effects, on this track or this segment |
-| `Ctrl+Alt+A` | Volume over time |
+| `Ctrl+Alt+A` | Change over time — volume on a segment, movement on an overlay |
 | `1` to `9` | Cut to that camera angle |
 
 **A marked range wins over the segment under the cursor**, so `Ctrl+A` then
@@ -670,14 +670,31 @@ The advice names the thing you then press, and a worse measurement suggests a
 harder setting. Sound that measures fine is told so rather than met with
 silence.
 
-### Volume over time
+### Change over time
 
-`Ctrl+Alt+A`. Not a curve with points on it — a **named shape**: duck, fade up,
-fade down, ease in, or hold quieter. A duck goes down and comes back inside its
-own length, which is what music under a voice actually does.
+`Ctrl+Alt+A`, and **what is under the cursor decides what you are asked** — the
+title says which, so it is never ambiguous.
+
+**On a segment, it is the volume.** Not a curve with points on it — a named
+shape: duck, fade up, fade down, ease in, or hold quieter. A duck goes down and
+comes back inside its own length, which is what music under a voice actually
+does.
+
+**On an overlay, it is position and opacity**, because an overlay is the only
+thing with somewhere to move to — a segment is the whole frame. Offered as
+movements rather than as axes and numbers:
+
+- Fade it up as it appears, or fade it out as it goes
+- Slide in from the left or the right
+- Rise up into place
+- Hold it half transparent
+
+A slide **ends exactly where the placement said the layer would sit**, so
+animating something does not also move it.
 
 Each reads back as the sentence that made it: *"volume dips to -18 decibels over
-4 seconds, then comes back"*.
+4 seconds, then comes back"*, *"horizontal position moves from -20 to 50 percent
+over 0.6 seconds"*.
 
 ---
 

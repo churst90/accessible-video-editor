@@ -6,6 +6,46 @@ is.
 
 ---
 
+## Where this is, as of version 0.16.0
+
+**Phases 1 to 16 are built.** 796 tests. The version's minor number is the
+highest phase built, so it says how far through this list the application is
+rather than being a number that goes up.
+
+### What is left
+
+| | Size | Notes |
+|---|---|---|
+| **Toolbar for sighted collaborators** | Small | The only `[planned]` marker left in this file |
+| **Preferences window** | Medium | Everything is settings JSON today. See "Ongoing" |
+| **Workflows** — record and run | Medium | Model built and tested; no UI. Keys reserved |
+| **Nudge, move-to-track** | Small each | No verb in `EditOperations` yet. Keys reserved |
+| **A Windows head** | Large | Decided: WPF. Spike first — see [CLIENTS.md](CLIENTS.md) |
+| **A macOS head** | Large | After Windows. Native AppKit over a JSON-RPC Core |
+| **`MainWindow` is 4,452 lines** | Medium | The one file genuinely too big |
+
+### What 1.0 would need
+
+Not a feature list — the things that make a version number mean something.
+
+1. **A whole video cut and published with it.** The deciding one. Everything
+   here is tested and none of it has yet survived an actual edit from import to
+   upload, which is the only test that finds the things nobody thought to assert.
+2. **The preferences window**, because "edit this JSON file" is not a shipping
+   answer for verbosity, devices or render defaults.
+3. **A render that has been watched by someone sighted**, once. The measurements
+   and descriptions are good and they are not a substitute for confirming that
+   the picture is actually right.
+4. **Crash-to-recovery**: autosave exists; opening the recovered file after a
+   hard kill has not been exercised.
+5. Optionally, the Windows head — though a Linux-only 1.0 is honest, since that
+   is what it is.
+
+Deliberately **not** on that list: bundling, installers, onboarding. This is a
+personal build and that decision has not changed.
+
+---
+
 ## Phase 1 — The transcript editor **[built]**
 
 Done. The transcript pane is a real text editor: structural verbs by identity,
@@ -683,7 +723,7 @@ failed.
 
 ---
 
-## Phase 15 — Volume over time **[built]**
+## Phase 15 — Change over time **[built]**
 
 What every other editor draws as a curve with draggable points, which is the
 least accessible control in any of them.
@@ -697,8 +737,29 @@ leave a stray point in that you cannot find.
 Arbitrary point editing is **deliberately not offered**. Every use of it that
 matters for talking-head video is one of these shapes.
 
-`Ctrl+Alt+A`. Position and opacity over time use the same model and are not yet
-exposed.
+### Volume, on a segment **[built]**
+
+Duck, fade up, fade down, ease in, hold quieter. Compiled to a `volume`
+expression with `eval=frame`, because the default evaluates once and the whole
+point is that it changes.
+
+### Position and opacity, on an overlay **[built]**
+
+An overlay is the only thing with somewhere to move to — a spine element is the
+whole frame — so `Ctrl+Alt+A` asks a different question depending on what is
+under the cursor, and says which in its title.
+
+Offered as **movements rather than as axes and numbers**: *slide in from the
+left*, *fade it up as it appears*, *rise up into place*. "Horizontal position,
+ramp, 0 to 50 percent over 0.6 seconds" is the same thing said in a way you would
+have to translate.
+
+A slide **ends exactly where the placement said the layer would sit**, so
+animating something does not also move it. `drawtext` takes `x`, `y` and `alpha`
+as expressions in `t`, so this is the same expression the model already
+describes rather than a second mechanism — and an overlay's time is offset by
+where it starts on the timeline, since a segment renders as its own file
+beginning at zero while an overlay is drawn onto the finished programme.
 
 ---
 

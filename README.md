@@ -12,6 +12,15 @@ it.
 
 ## Status
 
+**Version 0.16.0.** The minor number is the highest roadmap phase built, so it
+says how far through the plan this is rather than being a number that goes up.
+All sixteen phases are built; 796 tests.
+
+It is deliberately **not 1.0**, and the deciding reason is not a missing
+feature: no whole video has been cut and published with it yet, and that is the
+only test that finds what nobody thought to assert.
+[docs/ROADMAP.md](docs/ROADMAP.md) lists the rest of the criteria.
+
 Usable end to end: import, cut, card, render — and stream.
 
 **Built:** the document model and programme/source time mapping; three deletes,
@@ -102,8 +111,9 @@ verb, and which one is being acted on is always spoken first. `N` toggles
 snapping and `Ctrl+Alt+R` cycles ripple mode — both say what they now *do*, not
 just what they are called, because a mode you cannot see has to be announced.
 `Ctrl+Shift+G` groups a run of segments under a name, `Ctrl+Alt+E` treats the
-sound, `Ctrl+Alt+A` shapes the volume over time, and **a digit cuts to that
-camera angle** — the same gesture as a digit cutting to a scene while streaming.
+sound, `Ctrl+Alt+A` shapes change over time — volume on a segment, movement on an
+overlay — and **a digit cuts to that camera angle**, the same gesture as a digit
+cutting to a scene while streaming.
 
 In the **media bin**, `U` names the marked range of a source as a subclip and
 `M` makes a multicam group from your cameras.
