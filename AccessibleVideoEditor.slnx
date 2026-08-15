@@ -1,0 +1,15 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/AccessibleVideoEditor.Audio/AccessibleVideoEditor.Audio.csproj" />
+    <Project Path="src/AccessibleVideoEditor.Cli/AccessibleVideoEditor.Cli.csproj" />
+    <Project Path="src/AccessibleVideoEditor.Core/AccessibleVideoEditor.Core.csproj" />
+    <Project Path="src/AccessibleVideoEditor.Engine/AccessibleVideoEditor.Engine.csproj" />
+    <Project Path="src/AccessibleVideoEditor.Gtk/AccessibleVideoEditor.Gtk.csproj" />
+    <Project Path="src/AccessibleVideoEditor.Playback/AccessibleVideoEditor.Playback.csproj" />
+    <Project Path="src/AccessibleVideoEditor.Speech/AccessibleVideoEditor.Speech.csproj" />
+    <Project Path="src/AccessibleVideoEditor.Vision/AccessibleVideoEditor.Vision.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/AccessibleVideoEditor.Core.Tests/AccessibleVideoEditor.Core.Tests.csproj" />
+  </Folder>
+</Solution>

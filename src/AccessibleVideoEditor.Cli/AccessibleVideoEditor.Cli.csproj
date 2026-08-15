@@ -1,0 +1,19 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\AccessibleVideoEditor.Core\AccessibleVideoEditor.Core.csproj" />
+    <ProjectReference Include="..\AccessibleVideoEditor.Engine\AccessibleVideoEditor.Engine.csproj" />
+    <ProjectReference Include="..\AccessibleVideoEditor.Speech\AccessibleVideoEditor.Speech.csproj" />
+    <ProjectReference Include="..\AccessibleVideoEditor.Vision\AccessibleVideoEditor.Vision.csproj" />
+    <ProjectReference Include="..\AccessibleVideoEditor.Playback\AccessibleVideoEditor.Playback.csproj" />
+    <ProjectReference Include="..\AccessibleVideoEditor.Audio\AccessibleVideoEditor.Audio.csproj" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+</Project>
