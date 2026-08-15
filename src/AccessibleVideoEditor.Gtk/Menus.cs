@@ -24,7 +24,7 @@ public static class Menus
         var bar = Gio.Menu.New();
 
         bar.AppendSubmenu("_File", Section(
-            [("file.new", "win.new"), ("file.open", "win.open")],
+            [("file.new", "win.new"), ("file.open", "win.open"), ("file.recent", "win.recent")],
             [("file.save", "win.save"), ("file.saveAs", "win.saveAs")],
             [("file.importMedia", "win.import"), ("file.reloadEdl", "win.reloadEdl")],
             [("render.draft", "win.renderDraft"), ("render.master", "win.export")],

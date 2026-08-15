@@ -19,6 +19,7 @@ public static class CommandRegistry
     public static IReadOnlyList<CommandDefinition> All { get; } =
     [
         // ---- file --------------------------------------------------------
+        new("file.recent", "Recent projects", "Ctrl+Shift+O", CommandGroup.File, KeyOrigin.Universal),
         new("file.new", "New project", "Ctrl+N", CommandGroup.File, KeyOrigin.Universal),
         new("file.open", "Open project", "Ctrl+O", CommandGroup.File, KeyOrigin.Universal),
         new("file.save", "Save", "Ctrl+S", CommandGroup.File, KeyOrigin.Universal,

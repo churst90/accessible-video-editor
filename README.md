@@ -24,11 +24,14 @@ scenes, sources, multi-destination streaming and chat on Twitch, YouTube and
 Facebook; and the image editor, including scanner-bed detection and drawing by
 description.
 
-**Not built:** a settings view, project save and open, markers, and the command
-palette. Every unwired command says what it will do and roughly when, rather
-than doing nothing.
+**Not built:** markers, the command palette, transcript search, the to-do list,
+and creating titles, graphics and b-roll - those three render and can be
+described but cannot yet be added. Every unwired command says what it will do
+and roughly when, rather than doing nothing. See
+[docs/AUDIT.md](docs/AUDIT.md) for the full accounting.
 
 See [docs/MANUAL.md](docs/MANUAL.md) for how it works,
+[docs/AUDIT.md](docs/AUDIT.md) for an honest state of the codebase,
 [docs/SETTINGS.md](docs/SETTINGS.md) for what lives where, and
 [docs/ROADMAP.md](docs/ROADMAP.md) for what is coming.
 

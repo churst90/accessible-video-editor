@@ -56,6 +56,9 @@ public sealed class AppSettings
 
     public ToolPaths Tools { get; set; } = new();
 
+    /// <summary>Projects opened recently, newest first.</summary>
+    public List<string> Recent { get; set; } = [];
+
     // ---- loading and saving ----------------------------------------------
 
     public static string DirectoryPath =>

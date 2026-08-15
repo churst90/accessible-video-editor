@@ -839,7 +839,44 @@ have just straightened can go on the timeline without leaving the application.
 
 ---
 
-## 11. Files
+## 10d. The viewfinder **[built]**
+
+`F9` on a video track with a camera chosen. It says *"opening the camera"*
+before it does, every time.
+
+**Silence means you are framed.** That is the whole design: you stop moving when
+the sound stops, rather than interpreting anything.
+
+Until then you hear a tone **panned** to where your face is, **pitched** to how
+far up it is, and **ticking faster** as you get too close. Words only when the
+guidance changes — "move left", "raise the camera", "move back".
+
+`F8` is the talking viewfinder: what is actually in shot, rather than where you
+are in it. `Escape` closes it and turns the camera off.
+
+The detection is by skin colour and shape, tested across the range of skin
+tones. It finds a face; it does not identify one.
+
+---
+
+## 11. Saving your work **[built]**
+
+| Key | Action |
+|---|---|
+| `Ctrl+N` / `Ctrl+O` | New project / open one |
+| `Ctrl+S` / `Ctrl+Shift+S` | Save / save somewhere else |
+| `Ctrl+Shift+O` | Recent projects |
+
+A project is a folder with a `project.json` in it. Saving writes to a temporary
+file and moves it, so a crash mid-save cannot leave you with half a project.
+
+Every edit marks the project unsaved. Opening another one or starting a new one
+asks first, and **No has the focus** — it is the answer you get by pressing
+Enter without having listened.
+
+---
+
+## 12. Files
 
     project.json   the project — canonical
     edit.md        a text export that reads back in
@@ -853,7 +890,7 @@ hand-editing it in pluma, or having Claude edit it, both work.
 
 ---
 
-## 12. Keyboard scheme
+## 13. Keyboard scheme
 
 The bindings follow a rule, so unfamiliar ones are guessable:
 

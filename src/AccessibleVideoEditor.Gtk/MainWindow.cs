@@ -4,6 +4,7 @@ using AccessibleVideoEditor.Core.Model;
 using AccessibleVideoEditor.Core.Navigation;
 using AccessibleVideoEditor.Core.Samples;
 using AccessibleVideoEditor.Core.Images;
+using AccessibleVideoEditor.Core.Serialization;
 using AccessibleVideoEditor.Core.Settings;
 using AccessibleVideoEditor.Core.Streaming;
 using AccessibleVideoEditor.Core.Timeline;
@@ -30,7 +31,10 @@ public sealed class MainWindow
 {
     private readonly Gtk_.ApplicationWindow _window;
     private readonly Workspace _workspace = new();
-    private readonly EditSession _session;
+    private EditSession _session;
+
+    /// <summary>Set by every edit, cleared by every save. What makes closing safe.</summary>
+    private bool _dirty;
     private readonly DocumentCursor _cursor = new();
     private readonly EditClipboard _clipboard = new();
 
@@ -169,6 +173,15 @@ public sealed class MainWindow
         // still broadcasting, and there is nothing left on screen to say so.
         _window.OnCloseRequest += (_, _) =>
         {
+            if (_dirty)
+            {
+                // Said rather than blocked: a modal on the way out that a
+                // screen reader has not caught up with is a trap.
+                Announce(
+                    $"closing with unsaved changes to {Project.Name}",
+                    urgent: true);
+            }
+
             _viewfinder?.Dispose();
             _stream.Shutdown();
             _player.Dispose();
@@ -1924,6 +1937,7 @@ public sealed class MainWindow
         RegisterStreamActions();
         RegisterImageActions();
         RegisterTransitionActions();
+        RegisterFileActions();
 
         // Not built yet. Each says what it will do and roughly when, rather than
         // a bare "not wired" - so an unbuilt command is still informative.
@@ -2001,6 +2015,168 @@ public sealed class MainWindow
     }
 
     /// <summary>
+    /// New, open, save. Everything here guards unsaved work, because losing an
+    /// afternoon's edit is the one failure no amount of announcing makes up for.
+    /// </summary>
+    private void RegisterFileActions()
+    {
+        Action("new", NewProject);
+        Action("open", OpenProject);
+        Action("save", () => _ = SaveProject(saveAs: false));
+        Action("saveAs", () => _ = SaveProject(saveAs: true));
+        Action("recent", OpenRecent);
+    }
+
+    private void NewProject() => WithUnsavedWork(() =>
+        Prompt("Name for the new project", "Untitled", "Create", name =>
+        {
+            LoadInto(Project.CreateDefault(name));
+
+            _dirty = true;
+            Announce($"{name}. Nothing is on disk until you save it with Control S", urgent: true);
+        }));
+
+    private void OpenProject() => WithUnsavedWork(() =>
+        Prompt("Project folder", LastFolder(), "Open", async path =>
+        {
+            if (!File.Exists(System.IO.Path.Combine(path, "project.json")))
+            {
+                Announce("there is no project in that folder", urgent: true);
+                return;
+            }
+
+            try
+            {
+                var project = await ProjectJson.LoadAsync(path).ConfigureAwait(true);
+
+                LoadInto(project);
+                Remember(path);
+
+                _dirty = false;
+
+                Announce(
+                    $"{project.Name}. {project.Spine.Count} segments, "
+                    + $"{Timecode.Speak(_session.Map.Duration)}", urgent: true);
+            }
+            catch (Exception exception)
+            {
+                Announce($"could not open it: {exception.Message}", urgent: true);
+            }
+        }));
+
+    /// <summary>
+    /// Saves in place when the project has a home, and asks where when it does
+    /// not. Silent success is deliberate elsewhere in this application; not
+    /// here - a save you did not hear is a save you will not trust.
+    /// </summary>
+    private async Task SaveProject(bool saveAs)
+    {
+        if (!saveAs && Project.RootPath is { Length: > 0 } existing)
+        {
+            await WriteTo(existing).ConfigureAwait(true);
+            return;
+        }
+
+        Prompt(
+            "Folder to save the project in",
+            Project.RootPath ?? System.IO.Path.Combine(LastFolder(), Sanitise(Project.Name)),
+            "Save",
+            path => _ = WriteTo(path));
+    }
+
+    private async Task WriteTo(string path)
+    {
+        try
+        {
+            await ProjectJson.SaveAsync(Project, path).ConfigureAwait(true);
+
+            Remember(path);
+
+            _dirty = false;
+            _window.Title = $"{Project.Name} - {AboutInfo.Name}";
+
+            Announce($"saved to {System.IO.Path.GetFileName(path)}", urgent: true);
+        }
+        catch (Exception exception)
+        {
+            Announce($"could not save: {exception.Message}", urgent: true);
+        }
+    }
+
+    private void OpenRecent()
+    {
+        var recent = _settings.Recent.Where(Directory.Exists).ToList();
+
+        if (recent.Count == 0)
+        {
+            Announce("nothing recent yet", urgent: true);
+            return;
+        }
+
+        var menu = Gio.Menu.New();
+
+        foreach (var path in recent)
+        {
+            menu.Append(System.IO.Path.GetFileName(path), $"win.openRecent::{path}");
+        }
+
+        PopUp(menu, $"{recent.Count} recent");
+    }
+
+    /// <summary>
+    /// Replaces everything the window is showing. The session is rebuilt rather
+    /// than mutated so undo cannot reach back into a project you have closed.
+    /// </summary>
+    private void LoadInto(Project project)
+    {
+        _session = new EditSession(project);
+        _cursor.FocusedTrack = project.ProgrammeTrack.Id;
+        _cursor.MoveTo(0);
+        _cursor.ClearSelection();
+        _viewStart = 0;
+
+        _window.Title = $"{project.Name} - {AboutInfo.Name}";
+
+        RebuildTrackRows();
+        RebuildMediaRows();
+        Refresh();
+    }
+
+    /// <summary>
+    /// Asks before throwing work away, and only when there is work to throw.
+    /// No is focused, because it is the answer you get by pressing Enter
+    /// without having listened.
+    /// </summary>
+    private void WithUnsavedWork(System.Action then)
+    {
+        if (!_dirty)
+        {
+            then();
+            return;
+        }
+
+        ConfirmThen($"{Project.Name} has unsaved changes. Discard them?", then);
+    }
+
+    private void Remember(string path)
+    {
+        _settings.Recent.Remove(path);
+        _settings.Recent.Insert(0, path);
+
+        while (_settings.Recent.Count > 10) _settings.Recent.RemoveAt(_settings.Recent.Count - 1);
+
+        _settings.Save();
+    }
+
+    private string LastFolder() =>
+        _settings.Recent.FirstOrDefault() is { Length: > 0 } recent
+            ? System.IO.Path.GetDirectoryName(recent) ?? recent
+            : Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+
+    private static string Sanitise(string name) =>
+        string.Concat(name.Select(c => System.IO.Path.GetInvalidFileNameChars().Contains(c) ? '-' : c));
+
+    /// <summary>
     /// Transitions, track levels, and the handful of commands that were in the
     /// core with no way to reach them.
     /// </summary>
@@ -2033,6 +2209,27 @@ public sealed class MainWindow
             if (double.TryParse(name, out var seconds)) SetTransitionLength(seconds);
         });
         ParameterisedAction("pickCustomTransition", name => UseCustomTransition(name));
+
+        ParameterisedAction("openRecent", path =>
+        {
+            if (path.Length == 0) return;
+
+            WithUnsavedWork(async () =>
+            {
+                try
+                {
+                    LoadInto(await ProjectJson.LoadAsync(path).ConfigureAwait(true));
+                    Remember(path);
+
+                    _dirty = false;
+                    Announce($"{Project.Name}", urgent: true);
+                }
+                catch (Exception exception)
+                {
+                    Announce($"could not open it: {exception.Message}", urgent: true);
+                }
+            });
+        });
     }
 
     /// <summary>
@@ -2464,10 +2661,6 @@ public sealed class MainWindow
 
     private static readonly (string Name, string Note)[] NotYetBuilt =
     [
-        ("new", "new project is not built yet"),
-        ("open", "open project is not built yet"),
-        ("save", "save is not built yet"),
-        ("saveAs", "save as is not built yet"),
         ("reloadEdl", "reloading edit dot m d is not built yet"),
         ("marker", "markers are not built yet"),
         ("palette", "the command palette is not built yet"),
@@ -4175,6 +4368,8 @@ public sealed class MainWindow
     private void Apply(string label, Func<Project, EditResult> operation)
     {
         var result = _session.Apply(label, (project, _) => operation(project));
+
+        if (result.Changed) _dirty = true;
         Refresh();
         Announce(result.Announce(), urgent: true);
     }

@@ -11,6 +11,66 @@ Newest first. Dates are when the work landed.
 
 
 
+
+## The viewfinder, project save and open, and the rename
+
+### Renamed to Accessible Video Editor
+
+Everything: eight project directories, every namespace, the solution, the window
+title, the documentation. `ViDeo` appears nowhere in the code, projects or
+solution.
+
+### The viewfinder
+
+- **Face detection, not recognition.** It says "there is a face there", never
+  "that is Cody". The test is on **chrominance rather than red-green-blue**,
+  because the usual RGB skin rules are tuned on pale skin and quietly fail on
+  everyone else. Asserted across five skin tones from very pale to very dark.
+- Shape rules out what colour cannot: a wooden door sits inside the skin band,
+  so anything much wider than it is tall is refused. The larger of two faces
+  wins, so somebody walking past behind you does not become the subject.
+- **One long-lived ffmpeg at 160 by 120, twelve frames a second**, read frame by
+  frame - not stills grabbed per tick. Opening a camera takes the best part of a
+  second, so stills would answer a second after you moved and you would correct
+  against stale information.
+- **A tone panned to where you are, pitched to how far up, ticking faster as you
+  get too close - and silence when you are framed.** Silence is the target, so
+  you stop moving when the sound stops rather than interpreting anything.
+- The words are held back unless the guidance changes or six seconds pass. A
+  viewfinder that says "move left" four times a second is one you turn off.
+- **`F8` is the talking viewfinder**: what is actually in shot, which is a
+  different question from where you are in it.
+- The camera opens only on an explicit key, says so before it does, and closes
+  on Escape from anywhere.
+
+### Project save and open
+
+- `Ctrl+S`, `Ctrl+Shift+S`, `Ctrl+O`, `Ctrl+N`, and a recent list.
+- Every edit marks the project unsaved; opening or starting a new one asks
+  before discarding, with **No focused**.
+- The round trip is tested on a project that has actually been edited: mute,
+  hide and disable come back as three different things, a transition keeps its
+  sound and its length, track levels survive, custom transitions survive, and
+  **element ids are stable so anchored overlays still point where they did**.
+
+### About
+
+`Ctrl+F1`. Version, credits, and donations - Cash App `$churst90`, with named
+slots for Bitcoin, Ethereum and Monero that say they are not set yet rather than
+omitting them silently. The text is selectable, so an address can be copied
+rather than transcribed by ear.
+
+### Also
+
+- The whole keymap on `Shift+F1`, grouped.
+- Transitions: type, length, sound on the boundary, audition, and your own saved
+  by name. **No automatic ducking anywhere** - `Shift+G` sets any track's level.
+- Six commands that were in the core with no way to reach them are now wired:
+  set and audition transition, speed, insert hole, delete track, verbosity.
+- **`docs/AUDIT.md`**: what is in the code but not in the interface, the open
+  bugs and design issues, a comment-density measurement and a grade, and what a
+  working editor still wants.
+
 ## Per-channel levels, and Phase 13 is finished
 
 - **`:` opens levels per channel** — the only thing that reaches a cast the
