@@ -2,6 +2,85 @@
 
 Newest first. Dates are when the work landed.
 
+## Making the documentation and the application agree
+
+A pass that built nothing new. It checked every claim in the documentation
+against the source, fixed what was wrong on whichever side was wrong, and added
+the tests that stop it happening again.
+
+### Nine commands had a key and no handler
+
+`CommandRegistry` feeds `F1`, the command palette and the keymap, so an entry
+there is a promise that a key does something. Nine were not kept. Four are now
+built, because their models already existed and only the wiring was missing:
+
+- **`N` snapping** and **`Ctrl+Alt+R` ripple mode**. `ProjectSettings.Snap` and
+  `ProjectSettings.RippleMode` had been in the model, and settable only by
+  editing JSON. Both announce **what the mode now does** rather than only naming
+  it - "ripple all tracks, edits shift every track together" - because a mode
+  you cannot see is one you have to be told about, and neither goes on the undo
+  stack: undoing "snapping off" would be indistinguishable from undoing the cut
+  you made after it.
+- **`Ctrl+A` select this segment** and **`Ctrl+Shift+A` select this track**.
+  Marking in and out still works and is still the primary idiom; these are the
+  two ranges you ask for often enough that setting both ends by hand is wasted
+  work. Refusals name the specific reason - "past the last segment on B-roll",
+  not "nothing to select" - and a refusal leaves any existing selection alone,
+  since clearing it as a side effect would silently change what Delete acts on.
+
+The other five were **removed from the registry** rather than left lying:
+workflows, nudge-by-a-frame, move-to-track-above and export presets. They are
+designed and unbuilt, they now live in `ROADMAP.md` with their keys reserved,
+and a test pins those keys so nothing quietly takes one.
+
+`review.describe` and `review.describeEdit` were two entries for one feature, so
+`F1` read it twice and the palette offered it on two rows. One entry now, with
+`Ctrl+Alt+D` as its alternate.
+
+### Two real bugs, both invisible by nature
+
+- **Any modified `R` started a recording.** The window handler matched `R` in
+  the Tracks and Timeline views without checking modifiers, so `Ctrl+R` and
+  `Alt+R` opened the camera and began a take. Bare `R` only, now.
+- **`Ctrl+F2` started a master render.** It was documented as export presets,
+  which do not exist; the `F2` case did not exclude Control, so it fell through
+  to the full render - a long job nobody asked for, with nothing to indicate it
+  had begun.
+
+Both share a shape: a key doing something large and silent. That is the class of
+bug this application can least afford.
+
+### The documentation described a different application
+
+Every claim was written when it was true and never re-checked.
+
+- **`MANUAL.md` said importing media, insert, overwrite, recording, transitions,
+  markers, deleting a track and the whole of rendering were unbuilt.** All are
+  built. It also documented `F5` as "render draft"; `F5` arms a track, which
+  opens the camera.
+- **The view list was wrong**: `Ctrl+5` was described as a planned streamer view
+  and `Ctrl+6` was missing. They are the stream view and the image editor, both
+  built, and there is no record view at all.
+- **`ROADMAP.md` claimed subclips and compound segments as built.** Neither
+  exists. It also called range selection planned - it is built - and said holes
+  did not yet block a master render, which they do.
+- **`ARCHITECTURE.md` still presented Avalonia as the toolkit** and
+  speech-dispatcher as the speech route, describing a spike whose result had
+  already deleted both. It now records what happened, what GTK costs, and that
+  the `SpeechRoute` setting no longer exists.
+- **`AUDIT.md` claimed two checks "run over the tree".** Nothing in the test
+  suite read a source file. Its line counts and test count were also stale.
+
+### The checks now exist
+
+`tests/WiringTests.cs` reads the interface sources as text and asserts that
+every menu item reaches a handler, every command invoked by name exists, every
+menu label is a real registry command, no two commands share a title, and the
+keys reserved for unbuilt commands stay unclaimed. It is guarded against passing
+vacuously, which is the failure mode of a test that greps.
+
+Prose drifts silently and code does not. 695 tests, up from 678.
+
 
 
 

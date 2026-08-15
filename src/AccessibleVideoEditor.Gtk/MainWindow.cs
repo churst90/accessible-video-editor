@@ -691,6 +691,7 @@ public sealed partial class MainWindow
     {
         var shift = args.State.HasFlag(Gdk.ModifierType.ShiftMask);
         var control = args.State.HasFlag(Gdk.ModifierType.ControlMask);
+        var alt = args.State.HasFlag(Gdk.ModifierType.AltMask);
 
         if (args.Keyval == Gdk.Constants.KEY_Escape && _viewfinder is { IsOpen: true })
         {
@@ -741,7 +742,11 @@ public sealed partial class MainWindow
                 SpeakContextHelp();
                 return true;
 
-            case Gdk.Constants.KEY_F2:
+            // Control is excluded rather than ignored. Ctrl+F2 is documented as
+            // export presets, which does not exist yet - and falling through to
+            // the unmodified case started a full master render instead, which is
+            // a long job you did not ask for and cannot see starting.
+            case Gdk.Constants.KEY_F2 when !control:
                 Run(shift ? "renderDraft" : "export");
                 return true;
 
@@ -763,9 +768,13 @@ public sealed partial class MainWindow
 
             // R works where recording makes sense - the track editor and the
             // timeline - so you never leave the view you are editing in.
+            //
+            // Bare R only. This ran on any modified R too, which meant Ctrl+Alt+R
+            // and friends silently started a take: it opens the camera and begins
+            // recording, and there is nothing to see that it happened.
             case Gdk.Constants.KEY_F5 when shift:
             case Gdk.Constants.KEY_R or Gdk.Constants.KEY_r
-                when _workspace.Focused is Pane.Tracks or Pane.Timeline:
+                when !control && !alt && _workspace.Focused is Pane.Tracks or Pane.Timeline:
                 Run("record");
                 return true;
 
@@ -1663,6 +1672,23 @@ public sealed partial class MainWindow
                 Announce("selection cleared", urgent: true);
                 return true;
 
+            // Select by naming the range rather than marking both ends of it.
+            case Gdk.Constants.KEY_a or Gdk.Constants.KEY_A when control && shift:
+                Run("selectTrack");
+                return true;
+
+            case Gdk.Constants.KEY_a or Gdk.Constants.KEY_A when control:
+                Run("selectSegment");
+                return true;
+
+            case Gdk.Constants.KEY_n when !control && !alt && !shift:
+                Run("snap");
+                return true;
+
+            case Gdk.Constants.KEY_r or Gdk.Constants.KEY_R when control && alt:
+                Run("rippleMode");
+                return true;
+
             case Gdk.Constants.KEY_semicolon when control && shift:
                 Announce(_cursor.Selection?.Describe() ?? "no selection", urgent: true);
                 return true;
@@ -1941,6 +1967,22 @@ public sealed partial class MainWindow
         {
             _cursor.ClearSelection();
             Announce("selection cleared", urgent: true);
+        });
+        Action("selectSegment", () => Select(Selections.Segment(Project, _session.Map, _cursor)));
+        Action("selectTrack", () => Select(Selections.Track(Project, _session.Map, _cursor)));
+
+        // Modes rather than edits, so they change the settings directly and
+        // stay off the undo stack - see EditModes.
+        Action("snap", () =>
+        {
+            Announce(EditModes.ToggleSnap(Project.Settings), urgent: true);
+            _dirty = true;
+        });
+
+        Action("rippleMode", () =>
+        {
+            Announce(EditModes.CycleRipple(Project.Settings), urgent: true);
+            _dirty = true;
         });
         Action("viewfinder", EnterViewfinder);
         Action("describeShot", DescribeShot);
@@ -3862,6 +3904,19 @@ public sealed partial class MainWindow
 
     private TimeSelection Selection() =>
         _cursor.Selection ?? new TimeSelection(_cursor.ProgrammeTime, _cursor.ProgrammeTime + 1);
+
+    /// <summary>
+    /// Applies a selection built by naming what you wanted. A refusal leaves any
+    /// existing selection alone: clearing it as a side effect of a key that
+    /// failed would silently change what the next Delete acts on.
+    /// </summary>
+    private void Select(SelectionResult result)
+    {
+        if (result.Range is { } range) _cursor.SelectRange(range.From, range.To);
+
+        Refresh();
+        Announce(result.Announce, urgent: true);
+    }
 
     private void Apply(string label, Func<Project, EditResult> operation)
     {

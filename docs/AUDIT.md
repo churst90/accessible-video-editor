@@ -5,16 +5,45 @@ memory.
 
 ## 1. What is in the code but not reachable from the interface
 
-**Was: nine commands. Now: none.** All nine were built - markers, transcript
-search, the command palette, the to-do list, "read me the edit", reloading a
-hand-edited `edit.md`, and creating titles, graphics and b-roll.
+**Was: nine commands. Then: none, wrongly. Now: none, checked.**
 
-The last three were the most misleading: b-roll, titles and graphics rendered
-correctly and could be described, but could not be created. A project made in
-this application can now contain one.
+The nine were built - markers, transcript search, the command palette, the
+to-do list, "read me the edit", reloading a hand-edited `edit.md`, and creating
+titles, graphics and b-roll. The last three were the most misleading: b-roll,
+titles and graphics rendered correctly and could be described, but could not be
+created.
 
-Two checks run over the tree and both come back clean: every `win.` action has a
-handler, and every menu id exists in the command registry.
+**This section then claimed "two checks run over the tree" and they did not
+exist.** Nothing in the test suite read a source file. The conclusion happened to
+be right for menus and happened to be wrong for keys, and a further **nine
+commands were documented in `CommandRegistry` with no handler anywhere**:
+
+| Command | Key | Outcome |
+|---|---|---|
+| `edit.snap` | `N` | **Wired.** `ProjectSettings.Snap` existed with no way to change it |
+| `edit.rippleMode` | `Ctrl+Alt+R` | **Wired.** Same - the setting existed, unreachable |
+| `select.segment` | `Ctrl+A` | **Wired** |
+| `select.track` | `Ctrl+Shift+A` | **Wired** |
+| `workflow.run`, `workflow.record` | `Ctrl+Alt+K`, `Ctrl+Alt+Shift+K` | **Removed** - model built, feature not |
+| `edit.nudgeBack`, `edit.nudgeForward` | `Alt+Left/Right` | **Removed** - no verb in `EditOperations` |
+| `edit.moveTrackUp`, `edit.moveTrackDown` | `Alt+Up/Down` | **Removed** - same |
+| `render.presets` | `Ctrl+F2` | **Removed** - and see the bug below |
+
+Also `review.describe` and `review.describeEdit` were two registry entries for
+one feature, so `F1` read it out twice and the palette offered it on two rows.
+Collapsed into one, with `Ctrl+Alt+D` as its alternate.
+
+The rule applied throughout: **a registry entry is a promise that a key does
+something.** It feeds `F1`, the command palette and the keymap, so an entry with
+no handler is a key that lies - and a key that does nothing reads as the
+application having missed the press, not as the feature being absent. Commands
+that are designed but unbuilt now live in `ROADMAP.md` with their keys reserved,
+and a test pins those keys so nothing quietly takes one.
+
+The checks now exist, in `tests/WiringTests.cs`, and read the GTK sources as
+text: every menu action reaches a handler, every `Run` target exists, every menu
+label is a real registry command, no two commands share a title, and the
+reserved keys stay unclaimed.
 
 ### Historical - nine commands were unbuilt Every one of them announces what it will do
 and roughly when, rather than doing nothing:
@@ -33,14 +62,25 @@ The last three are the most misleading: **b-roll, titles and graphics render
 correctly and can be described, but cannot be created from the interface.** A
 project made in this application cannot yet contain one.
 
-Everything else is reachable. Verified by two checks that now run over the tree:
-every `win.` action has a handler, and every menu id exists in the command
-registry. Both come back clean, and the second one found two View menu items
-that had been silently missing since they were written.
+Both menu checks come back clean, and the menu-id one found two View items that
+had been silently missing since they were written.
 
 ## 2. Bugs and design issues
 
-### Fixed during this audit
+### Fixed in the reconciliation pass
+
+- **Any modified `R` started a recording.** The window-level handler matched
+  `R` in the Tracks and Timeline views without checking modifiers, so `Ctrl+R`,
+  `Alt+R` and `Ctrl+Alt+R` all began or ended a take - opening the camera, with
+  nothing to see that it had happened. Bare `R` only, now.
+- **`Ctrl+F2` started a master render.** It was documented as export presets,
+  which do not exist; the `F2` case did not exclude Control, so the key fell
+  through to the full render. A long job nobody asked for, and no way to tell it
+  had begun. The key is now inert and reserved.
+- **The manual documented `F5` as "render draft".** `F5` arms a track, which
+  opens the camera. Worth more than a typo.
+
+### Fixed during the earlier audit
 
 - **Two View menu items never appeared.** They referenced `pane.next` and
   `pane.previous`, which do not exist; the menu builder skips unknown ids
@@ -74,25 +114,32 @@ no per-tick rebuild.
 
 ### Open, in the order they matter
 
-1. **`MainWindow` is 4,390 lines**, still the largest file. It is the only file in the tree that is
+1. **`MainWindow` is 4,407 lines**, still the largest file. It is the only file in the tree that is
    genuinely too big. It holds five views' key handlers, every command
    registration and every dialog. The seam is obvious - each view already has a
    `On…Key` method and a build method - and `StreamView`, `ImageView` and
    `TimelineCanvas` show the shape the rest should follow. Nothing is wrong with
    it; it is just where everything without a home ended up.
 
-2. **`StreamView` at 1,048 lines** is heading the same way as the window did.
+2. **`StreamView` at 1,083 lines** is heading the same way as the window did.
 
 3. **No keyframes anywhere.** Volume over time and position over time are the
    two that a finished edit eventually wants.
 
+4. **Subclips and compound segments do not exist**, and `ROADMAP.md` claimed
+   both as built until this pass. Nothing in the model names a range of a
+   source, and nothing groups segments into one object. Compound is the more
+   valuable of the two without sight: it turns a region into a single thing you
+   can move.
+
+5. **Export presets do not exist.** Phase 8 claimed them.
+
 ## 3. Comments and cleanliness
 
-**28,341 lines of source. 14 percent comments.** Was 15 percent across 27,861
-lines before this pass, with 91 doc blocks of nine lines or more; there are now
-59, and the rule applied throughout is the same: **a comment keeps the reason
-and drops the restatement.** Where a summary elaborated on its own first
-paragraph, the elaboration went.
+**28,444 lines of source. 15 percent comments.** The rule applied throughout is
+**a comment keeps the reason and drops the restatement**: where a summary
+elaborated on its own first paragraph, the elaboration went, and doc blocks of
+nine lines or more came down from 91 to 59.
 
 That ratio is defensible for this codebase, because a large share of the
 comments carry decisions that are not recoverable from the code - *why* silence
@@ -102,9 +149,17 @@ otherwise be re-litigated.
 
 **Grade: A-.** Consistent naming, no dead code, no `TODO`s, no swallowed
 exceptions that hide a failure from the user, no `.Result` or `.Wait()`
-anywhere, and 623 tests that assert on behaviour and spoken output rather than
-on implementation. It is held back from an A by two files that are still
-larger than they should be.
+anywhere, and 695 tests that assert on behaviour and spoken output rather than
+on implementation. It is held back from an A by two files that are still larger
+than they should be - and, until this pass, by documentation that described a
+different application from the one in the repository.
+
+**The lesson of this pass is about the documentation, not the code.** Every
+claim in `ROADMAP.md` and `MANUAL.md` was written when it was true and never
+re-checked, so the manual told a new reader that importing media was unbuilt
+while nine registry commands the manual never mentioned did nothing at all.
+Prose drifts silently; that is what `tests/WiringTests.cs` is for, and why the
+metrics in this file are now taken from the tree rather than from memory.
 
 ## 4. Is the editing complete?
 

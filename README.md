@@ -24,8 +24,15 @@ scenes, sources, multi-destination streaming and chat on Twitch, YouTube and
 Facebook; and the image editor, including scanner-bed detection and drawing by
 description.
 
-**Every command is wired.** What a finished editor still wants - nested clips,
-subclips, multicam switching, audio effects and keyframes - is listed in
+**Every command in the registry is wired**, and a test keeps it that way by
+reading the interface sources and checking that every menu item reaches a
+handler. Commands that are designed but unbuilt are *not* listed in the
+registry - an entry there feeds `F1`, the palette and the keymap, so one with no
+handler is a key that lies. They live in
+[docs/ROADMAP.md](docs/ROADMAP.md) with their keys reserved.
+
+What a finished editor still wants - subclips, compound segments, multicam
+switching, audio effects, export presets and keyframes - is listed in
 [docs/AUDIT.md](docs/AUDIT.md), along with an honest grade of the codebase.
 
 See [docs/MANUAL.md](docs/MANUAL.md) for how it works,
@@ -58,7 +65,7 @@ Keys:
 
 | Key | Action | |
 |---|---|---|
-| `Ctrl+1`–`Ctrl+6` | Go to a view | timeline, tracks, transcript, media, record, stream |
+| `Ctrl+1`–`Ctrl+6` | Go to a view | timeline, tracks, transcript, media, stream, images |
 | `F6` / `Shift+F6` | Next / previous view | |
 | `Tab` / `Shift+Tab` | Next / previous edit point on any track | Reaper's transient key |
 | `Up` / `Down` | Move between rows — tracks | native list navigation |
@@ -82,6 +89,12 @@ Keys:
 In the **track editor**, plain letters are track controls — `M` mute, `S` solo,
 `L` lock, `N` rename, `Delete` remove the track. Nothing there is a text field,
 so single keys are safe.
+
+In the **timeline**, `Ctrl+A` selects the segment under the cursor and
+`Ctrl+Shift+A` the whole track; a marked range wins over the segment for every
+verb, and which one is being acted on is always spoken first. `N` toggles
+snapping and `Ctrl+Alt+R` cycles ripple mode — both say what they now *do*, not
+just what they are called, because a mode you cannot see has to be announced.
 
 In the **transcript editor** every structural key takes a modifier, because
 unmodified keys are typing: `Ctrl+Shift+K` delete a segment, `Ctrl+Shift+E` cut
@@ -128,7 +141,7 @@ bundling anything.
                          scene compositing, encoder, chat clients
     src/AccessibleVideoEditor.Playback   libmpv preview, EDL construction, music player
     src/AccessibleVideoEditor.Audio      audio output, earcons, viewfinder sonification
-    src/AccessibleVideoEditor.Speech     announcer and platform speech backends
+    src/AccessibleVideoEditor.Speech     the IAnnouncer contract and earcon vocabulary
     src/AccessibleVideoEditor.Vision     capture devices, face detection, drift monitoring
     src/AccessibleVideoEditor.Gtk        GTK4 user interface
     src/AccessibleVideoEditor.Cli        headless client

@@ -9,8 +9,8 @@ Nothing in this design is novel except the interaction model, and the
 architecture exists to protect that model:
 
     ┌──────────────┐   ┌──────────────┐   ┌──────────────────┐
-    │  AccessibleVideoEditor.App   │   │  AccessibleVideoEditor.Cli   │   │  Claude skill    │
-    │  (Avalonia)  │   │              │   │  (~/scripts/vid) │
+    │ …Editor.Gtk  │   │ …Editor.Cli  │   │  Claude skill    │
+    │ (GTK4/GirCore)│  │              │   │  (~/scripts/vid) │
     └──────┬───────┘   └──────┬───────┘   └────────┬─────────┘
            └──────────────────┼─────────────────────┘
                               ▼
@@ -19,12 +19,18 @@ architecture exists to protect that model:
     └──┬──────────┬──────────┬───────────┬──────────┬───────────┘
        ▼          ▼          ▼           ▼          ▼
     Engine     Playback    Audio      Speech     Vision
-   (ffmpeg,     (libmpv)   (SDL2,    (speech-  (camera, face
-    whisper)               synth)   dispatcher)  detect, drift)
+   (ffmpeg,     (libmpv)   (SDL2,   (IAnnouncer,  (camera, face
+    whisper)               tones)   no synth)     detect, drift)
 
-The GUI is a replaceable client. If Avalonia's Linux accessibility turns out
-to be insufficient (see **Risks**), the UI can be swapped without touching
-anything below it.
+The GUI is a replaceable client: everything below `…Editor.Gtk` is
+UI-agnostic, so a second front end is a leaf change rather than a rewrite.
+
+**The application never synthesises speech.** `IAnnouncer` is an interface, and
+the only implementation that speaks routes through `gtk_accessible_announce`
+(GTK 4.14+), which hands the text to whatever screen reader is running. An
+earlier speech-dispatcher announcer was deleted: spawning `spd-say` per
+utterance was slow, and its "interrupt" killed a process that had already
+exited.
 
 ## The document model
 
@@ -253,14 +259,20 @@ placements drifting off-canvas when text length changes.
 Segment renders are content-hash cached, so changing one line re-renders one
 segment.
 
-## Speech is the application's own channel
+## Speech is one channel, and the application does not own it
 
-`IAnnouncer` speaks through speech-dispatcher directly rather than routing
-through the screen reader. That is deliberate: this app produces fast dynamic
-feedback that needs to interrupt itself, prioritise, and duck against the
-audio scrub — none of which screen reader announcement channels offer, and all
-of which behave differently per platform. The standard widget layer still
-speaks through the screen reader as normal.
+`IAnnouncer` is an interface with one speaking implementation, and it routes
+**through the screen reader** — `gtk_accessible_announce`, with a priority per
+message. The original design had the application speak for itself through
+speech-dispatcher, on the reasoning that fast dynamic feedback needs to
+interrupt itself and prioritise in ways an announcement channel does not offer.
+
+That was tried and reversed. Speaking directly meant two voices talking over
+each other, and the "interrupt" killed a process that had already exited. What
+the reasoning actually pointed at was that **fast feedback should not be speech
+at all**: earcons, the sonified viewfinder and the audible meter carry it now,
+they are faster than any voice, and they do not compete with Orca for the
+channel. Words are kept for the things that need words.
 
 `Progress`-priority messages never queue. While moving fast, the newest
 position is the only one worth hearing.
@@ -305,47 +317,39 @@ classic disaster and it is entirely preventable.
 | Snapshot undo, not inverse commands | More memory per step; cannot drift out of sync with the model |
 | mpv in its own window | No embedded video surface in v1; removes the fiddliest toolkit problem and costs the primary user nothing |
 
-## Risks
+## The toolkit, and how it was settled
 
-**Avalonia's Linux AT-SPI bridge is the biggest one.** Windows UIA and macOS
-NSAccessibility are well-trodden; the Linux bridge is the least mature of the
-three, and Linux with Orca is the primary target. Mitigations, in order:
+**Avalonia was tried and failed.** The plan was Avalonia by default, with GTK as
+the fallback if its Linux AT-SPI bridge proved too weak — the bridge being the
+least mature of its three backends, and Orca the primary target. A four-track
+scrubber was built as a spike and run under Orca. Orca could not see the window
+at all: Insert+T reported "could not find current location" while the AT-SPI
+stack was independently verified healthy. That is not a gap to work around, so
+the Avalonia head was deleted.
 
-1. **The spike is built** — `AccessibleVideoEditor.App` is a working four-track scrubber that
-   announces through the accessibility tree and through speech-dispatcher
-   simultaneously, with F10 to mute the latter. Run it under Orca; the result
-   decides the toolkit. See README.
-2. The `IAnnouncer` channel does not depend on the AT-SPI bridge at all, so
-   the most important announcements survive a weak bridge.
-3. The GUI is a client. Replacing it does not touch Core, Engine, Audio,
-   Speech, Vision or Playback.
+**GTK4 through GirCore is the UI**, and Orca reads it correctly. The cost is the
+one the original analysis named, and it has been accepted rather than solved:
 
-### Why not GTK
+> GTK does not map to UIA on Windows or to NSAccessibility on macOS, so a GTK
+> build is excellent on Linux and unusable with NVDA, JAWS or VoiceOver.
 
-GTK is the obvious counter-proposal, and on Linux alone it would probably win:
-AT-SPI is GNOME's own stack, GTK widgets are accessible natively, and Orca
-support is the best available anywhere.
-
-It loses on everything else. GTK does not map to UIA on Windows or to
-NSAccessibility on macOS, so a GTK build would be excellent on Linux and
-effectively unusable with NVDA, JAWS or VoiceOver — the exact inverse of the
-problem, and a harder one to fix later, because it is not a maturity gap that
-closes with time. The C# binding story is also thinner: GirCore is young and
-Gtk# 3 is stale, against Avalonia being a first-class .NET framework.
-
-Given the UI is a replaceable client, the cost of guessing wrong on Avalonia is
-one layer. The cost of guessing wrong on GTK is the cross-platform goal. So:
-Avalonia by default, GTK as the fallback *if the spike shows the bridge is
-unusable and cannot be worked around* — in which case the `IAnnouncer` route
-already carries most of the load anyway.
+So this is **Linux-first**, and Windows or macOS means a second front end over
+the same Core rather than a recompile. That is a bounded piece of work — Core,
+Engine, Audio, Speech, Vision and Playback are all UI-agnostic and the whole
+interaction model lives in `CommandRegistry` — but it is a real one, and no such
+front end exists today.
 
 ### Speech routing
 
-`SpeechRoute` settles this rather than hard-coding it: `ScreenReader`,
-`Direct`, or `Auto` (the default) — widget and dialog text through the screen
-reader, rapid feedback direct. On Linux both routes end in speech-dispatcher,
-so they use the same voice and sound identical; the only difference is whether
-a message queues behind Orca or interrupts independently.
+There is one route: `gtk_accessible_announce`. An earlier design had a
+`SpeechRoute` setting (`ScreenReader` / `Direct` / `Auto`) so rapid feedback
+could bypass the screen reader through speech-dispatcher. It was removed with
+the speech-dispatcher announcer and **the setting no longer exists**. Earcons
+and the sonified meters carry the rapid feedback instead, which is better: a
+tone is faster than any speech route and does not compete with Orca for the
+channel.
+
+## Risks
 
 **The scrubber's feel is unproven.** The granularity model and announcement
 design have no prior art to copy, and they decide whether this is a joy or

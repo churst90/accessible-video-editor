@@ -38,7 +38,10 @@ public static class Menus
              ("edit.disable", "win.disable"), ("edit.mute", "win.mute")],
             [("edit.trimHead", "win.trimHead"), ("edit.trimTail", "win.trimTail"),
              ("edit.speed", "win.speed")],
-            [("edit.insertHole", "win.insertHole"), ("edit.marker", "win.marker")]));
+            [("edit.insertHole", "win.insertHole"), ("edit.marker", "win.marker")],
+            [("select.segment", "win.selectSegment"), ("select.track", "win.selectTrack"),
+             ("select.clear", "win.selectClear")],
+            [("edit.snap", "win.snap"), ("edit.rippleMode", "win.rippleMode")]));
 
         bar.AppendSubmenu("_Clean_up", Section(
             [("cleanup.fillers", "win.removeFillers"), ("cleanup.silences", "win.removeSilences")],
@@ -48,7 +51,7 @@ public static class Menus
         bar.AppendSubmenu("_Mark", Section(
             [("edit.marker", "win.marker"), ("marker.remove", "win.removeMarker"),
              ("marker.list", "win.markerList")],
-            [("review.issues", "win.issues"), ("review.describe", "win.describeEdit")],
+            [("review.issues", "win.issues"), ("review.describeEdit", "win.describeEdit")],
             [("transcript.find", "win.find")]));
 
         bar.AppendSubmenu("_Insert", Section(

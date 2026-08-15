@@ -50,7 +50,9 @@ public static class CommandRegistry
             "1080p plus captions. Blocked while holes remain.", Alternate: "Ctrl+M"),
         new("render.draft", "Render draft", "Shift+F2", CommandGroup.Output, KeyOrigin.Invented,
             "540p, fast, for checking."),
-        new("render.presets", "Export presets", "Ctrl+F2", CommandGroup.Output, KeyOrigin.Invented),
+        // Export presets are designed but unbuilt - nothing in Engine takes a
+        // preset yet. Ctrl+F2 is held for it, and no longer falls through to a
+        // master render. See ROADMAP.md, phase 8.
 
         new("find.next", "Find in transcript", "F3", CommandGroup.Navigation, KeyOrigin.Universal,
             "F3 is find-next everywhere."),
@@ -86,7 +88,9 @@ public static class CommandRegistry
         new("review.describeFrame", "Describe this frame", "F8", CommandGroup.Review, KeyOrigin.Invented,
             "Renders the still under the cursor and reads back what is actually there."),
         new("review.describeEdit", "Read me the edit", "Shift+F8", CommandGroup.Review, KeyOrigin.Invented,
-            "A spoken summary of the whole timeline."),
+            "How long, what is on it, and what still needs doing. Ctrl+Alt+D does the "
+            + "same thing from anywhere, because it is worth asking outside the timeline.",
+            Context: CommandContext.Global, Alternate: "Ctrl+Alt+D"),
 
         new("capture.describeShot", "What is in shot", "F8 while the viewfinder is open",
             CommandGroup.Capture, KeyOrigin.Invented,
@@ -187,14 +191,13 @@ public static class CommandRegistry
         new("edit.insertHole", "Insert a hole", "Ctrl+H", CommandGroup.Editing, KeyOrigin.Invented,
             "Reserved space with a note. Blocks the master render until filled.",
             Context: CommandContext.Editing),
-        new("edit.nudgeBack", "Nudge one frame back", "Alt+Left", CommandGroup.Editing, KeyOrigin.Premiere),
-        new("edit.nudgeForward", "Nudge one frame forward", "Alt+Right", CommandGroup.Editing, KeyOrigin.Premiere),
+        // Nudge and move-to-track are designed but unbuilt, so they are not
+        // listed: EditOperations has no verb for either, and moving a spine
+        // element to another track means turning it into an overlay item, which
+        // is a decision rather than a keystroke. Alt+Left/Right and Alt+Up/Down
+        // are held for them. See ROADMAP.md, "Ongoing".
         new("edit.trimHead", "Trim head to cursor", "Alt+BracketLeft", CommandGroup.Editing, KeyOrigin.Invented),
         new("edit.trimTail", "Trim tail to cursor", "Alt+BracketRight", CommandGroup.Editing, KeyOrigin.Invented),
-        new("edit.moveTrackUp", "Move segment to track above", "Alt+Up", CommandGroup.Editing, KeyOrigin.Invented,
-            Context: CommandContext.Timeline),
-        new("edit.moveTrackDown", "Move segment to track below", "Alt+Down", CommandGroup.Editing, KeyOrigin.Invented,
-            Context: CommandContext.Timeline),
         new("transcript.delete", "Delete this segment", "Ctrl+Shift+K", CommandGroup.Editing, KeyOrigin.CodeEditor,
             "VS Code's delete-line. Plain Delete has to stay character deletion here, "
             + "because the transcript is a real text field.",
@@ -308,21 +311,17 @@ public static class CommandRegistry
         // ---- output ------------------------------------------------------------
 
         // ---- workflows ---------------------------------------------------------
-        // Moved off Ctrl+Shift+K: that is VS Code's delete-line, which the
-        // transcript has better claim to. Workflows are found by name in the
-        // palette anyway.
-        new("workflow.run", "Run a workflow", "Ctrl+Alt+K", CommandGroup.Workflows, KeyOrigin.Invented),
-        new("workflow.record", "Record a workflow", "Ctrl+Alt+Shift+K", CommandGroup.Workflows, KeyOrigin.Invented),
+        // Deliberately absent. Workflow and WorkflowStep exist and are tested,
+        // but nothing records or runs one yet, and a registry entry is a promise
+        // that a key does something: it feeds F1, the palette and the keymap, so
+        // an entry with no handler is a key that lies. Ctrl+Alt+K and
+        // Ctrl+Alt+Shift+K are held for it. See ROADMAP.md, "Ongoing".
 
         // ---- markers -------------------------------------------------------
         new("marker.remove", "Remove the marker here", "Shift+M", CommandGroup.Editing,
             KeyOrigin.Invented, Context: CommandContext.Editing),
         new("marker.list", "List the markers", "Ctrl+M", CommandGroup.Navigation, KeyOrigin.Invented,
             "Enter goes there.", Context: CommandContext.Editing),
-        new("review.describe", "Read me the edit", "Ctrl+Alt+D", CommandGroup.Review,
-            KeyOrigin.Invented,
-            "How long, what is on it, and what still needs doing.",
-            Context: CommandContext.Global),
         new("transcript.find", "Find in the transcript", "Ctrl+F", CommandGroup.Navigation,
             KeyOrigin.Universal, Context: CommandContext.Global),
 

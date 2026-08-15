@@ -25,7 +25,11 @@ plain `Delete` has to stay character deletion:
   with it.** This is the feature that makes text better than a timeline: you
   restructure a video the way you restructure a paragraph.
 - `Ctrl+Enter` — split the segment at the word the caret is on
-- Range selection then any verb — **[planned]**
+- Range selection then any verb — **[built]**. `EditTarget.Resolve` gives a
+  marked range priority over the segment under the cursor, so Delete, Lift and
+  the rest act on the selection when there is one. `Ctrl+A` selects the segment
+  and `Ctrl+Shift+A` the whole track, so the common ranges do not need marking
+  by hand.
 
 Segments are addressed **by identity, not by time**, so a cut line can still be
 deleted, restored and moved despite having no programme time at all.
@@ -62,7 +66,9 @@ round-trip unambiguous. Speech is never bracketed.
 ## Phase 2 — Views and the status line **[built]**
 
 - One view at a time: `Ctrl+1` timeline, `Ctrl+2` tracks, `Ctrl+3` transcript,
-  `Ctrl+4` media bin, `Ctrl+5` record, `Ctrl+6` stream **[built]**
+  `Ctrl+4` media bin, `Ctrl+5` stream, `Ctrl+6` images **[built]**. There is
+  deliberately **no record view** - recording is per track, so it happens in the
+  track editor and the timeline.
 - Views announced by name, never by number **[built]**
 - `F6` / `Shift+F6` cycles for when numbers are not to hand **[built]**
 - **`Tab` returns to normal within-view focus movement** **[built]**
@@ -138,7 +144,7 @@ Inserting a card inserts a **new segment** with its own duration.
 
 ---
 
-## Phase 6 — Media, assembly, and audio detach **[built]**
+## Phase 6 — Media, assembly, and audio detach **[built, less subclips and compound segments]**
 
 - `Ctrl+I` import; the import **reports what it got** — resolution, frame rate,
   duration, and how many audio tracks and what they are
@@ -150,9 +156,14 @@ Inserting a card inserts a **new segment** with its own duration.
   (Until then, `atrack=` already selects *which* audio track of a source plays —
   0 mix, 1 microphone, 2 system audio.)
 - **Subclips** — mark a range of a source and name it, so "the good intro" is a
-  thing you can insert
+  thing you can insert **[planned]**
 - **Compound segments** — collapse ten segments into one named thing. Very
   useful without sight: it turns a region into a single object you can move.
+  **[planned]**
+
+Those last two were marked built in an earlier revision of this file and are
+not: nothing in the model names a range of a source, and nothing groups
+segments. Everything else in this phase is built and tested.
 
 ---
 
@@ -177,8 +188,11 @@ The largest single remaining port: ~1,400 lines of filtergraph building in
 - Three tiers: live playback → warm draft (background, incremental) → master
 - Content-hash segment cache **[built]** — one edit re-renders one segment, and
   reordering costs nothing
-- Holes block the master render **[built as a rule, not yet enforced in a render]**
-- Export presets: YouTube 1080p, shorts 9:16, audio only
+- Holes block the master render **[built]** — `FfmpegRenderEngine` refuses a
+  master while any hole remains, and counts them
+- Export presets: YouTube 1080p, shorts 9:16, audio only **[planned]** — nothing
+  in Engine takes a preset yet. `Ctrl+F2` is held for it and does nothing;
+  it used to fall through and start a master render instead
 - Progress announced periodically, not on every tick
 
 ---
@@ -651,7 +665,28 @@ shape and needs rethinking rather than adapting.
 - **Beat grid** — snapping derived from the music track's tempo, for cutting to
   music. The only version of "grid" that earns its place; video has no meter,
   so a musical bar grid would be meaningless.
-- **Workflows** — named macros over command IDs **[model built]**
+- **Workflows** — named macros over command IDs **[model built]**. `Workflow`
+  and `WorkflowStep` exist and are tested; nothing records or runs one.
+  `Ctrl+Alt+K` and `Ctrl+Alt+Shift+K` are held for them.
+- **Nudge by a frame** (`Alt+Left`/`Alt+Right`) and **move a segment to the
+  track above or below** (`Alt+Up`/`Alt+Down`) — designed, no verb in
+  `EditOperations` yet. Moving a spine element to another track means turning it
+  into an overlay item, which is a decision rather than a keystroke.
+
+### Keys held for unbuilt commands
+
+Reserved rather than reassigned, so the design survives and nothing quietly
+takes the binding. A test pins them.
+
+| Key | Waiting for |
+|---|---|
+| `Ctrl+F2` | Export presets |
+| `Ctrl+Alt+K`, `Ctrl+Alt+Shift+K` | Run and record a workflow |
+| `Alt+Left`, `Alt+Right` | Nudge one frame |
+
+**None of these appear in `CommandRegistry`.** An entry there is a promise that
+a key does something — it feeds `F1`, the command palette and the keymap — so a
+command listed with no handler is a key that lies. They come back when they work.
 
 ---
 

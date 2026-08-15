@@ -102,7 +102,8 @@ timeline is where the work happens, so it is view 1.
 | `Ctrl+2` | **Track editor** | Track headers: name, arm, mute, solo, lock. Add and remove tracks. |
 | `Ctrl+3` | **Transcript editor** | The same edit as text. Delete sentences, reorder them, fix captions. |
 | `Ctrl+4` | **Media bin** | Everything imported. Browse a source, mark the bits you want, insert them. |
-| `Ctrl+5` | **Streamer view** | Live output. **[planned, far out]** |
+| `Ctrl+5` | **Stream view** | Live output: scenes, sources, chat per platform, going live. |
+| `Ctrl+6` | **Image editor** | Photographs: measure, straighten, crop, correct, paint, export. |
 
 There is deliberately **no record view**. Recording is per track, so it happens
 in the track editor and the timeline — leaving the view you are editing in to
@@ -131,15 +132,15 @@ One domain per key, stacked, so an unfamiliar binding is guessable:
 
 | Key | Plain | Shift | Ctrl |
 |---|---|---|---|
-| `F1` | What can I do here | Read the whole keymap | |
-| `F2` | Render master | Render draft | Export presets |
+| `F1` | What can I do here | Read the whole keymap | About this application |
+| `F2` | Render master | Render draft | *(held for export presets)* |
 | `F3` | Find in transcript | Find previous | |
 | `F4` | Quality of this segment | Quality across the project | |
 | `F5` | Arm or disarm this track | Start or stop recording | Choose capture device |
 | `F6` | Next view | Previous view | |
 | `F7` | To-do list | | |
 | `F8` | Describe this frame | Read me the edit | |
-| `F9` | Accessible viewfinder | | |
+| `F9` | Accessible viewfinder | Audible level meter | |
 | `F10` | | Context menu | |
 | `F12` | Where am I | | |
 
@@ -150,7 +151,7 @@ field.
 
 ---
 
-## 3. The Media view **[partly built]**
+## 3. The Media view **[built]**
 
 Everything imported into the project, with what `ffprobe` found: resolution,
 frame rate, duration, and **how many audio tracks and what they are**.
@@ -160,11 +161,11 @@ audio — and they are listed by name, never as a bare number.
 
 What you can do here:
 
-- `Ctrl+I` — import video, audio or images **[planned]**
-- `Enter` — open a source's transcript in the Transcript view **[planned]**
-- `,` — **insert** the marked range at the cursor, rippling **[planned]**
-- `.` — **overwrite** the marked range at the cursor **[planned]**
-- `F4` — picture and sound quality report **[planned]**
+- `Ctrl+I` — import video, audio or images
+- `Enter` — open a source's transcript in the Transcript view
+- `,` — **insert** the marked range at the cursor, rippling
+- `.` — **overwrite** the marked range at the cursor
+- `F4` — picture and sound quality report
 - Applications key — context menu
 
 **Importing several videos and cutting them together** is the normal workflow:
@@ -186,11 +187,11 @@ Plain letters are safe here because nothing in this view is a text field.
 | `S` | Solo or unsolo |
 | `L` | Lock or unlock — locked tracks are excluded from ripple |
 | `B` | Arm or disarm |
-| `N` | Rename this track **[built]** |
-| `Ctrl+T` | New track **[built]** |
-| `F5` | Arm or disarm **[built]** |
-| `Shift+F5` or `R` | Start or stop recording **[planned]** |
-| `Delete` | Delete this track, confirming first **[planned]** |
+| `N` | Rename this track |
+| `Ctrl+T` | New track |
+| `F5` | Arm or disarm |
+| `Shift+F5` or `R` | Start or stop recording |
+| `Delete` | Delete this track, confirming first |
 
 **Arm means three things at once**, because they are one intent: this track is
 the record target, it names the camera or microphone that feeds it, and arming
@@ -264,10 +265,26 @@ The ladder, coarse to fine:
 | `Shift+E` | Disable or restore — non-destructive |
 | `Ctrl+Shift+M` | Mute the segment's audio |
 | `Alt+[` / `Alt+]` | Trim head / tail to the cursor |
-| `T` | Transition at this boundary **[planned]** |
-| `M` | Add a marker **[planned]** |
+| `X` | Transition at this boundary |
+| `Shift+X` | Audition the transition without moving the cursor |
+| `M` | Add a marker |
+| `Shift+M` / `Ctrl+M` | Remove the marker here / list the markers |
 | `Ctrl+C` / `Ctrl+X` / `Ctrl+V` | Copy, cut, paste — **including between tracks** |
 | `Ctrl+Z` | Undo |
+| `I` / `O` | Mark in / mark out |
+| `Ctrl+A` | Select the segment under the cursor |
+| `Ctrl+Shift+A` | Select everything on this track |
+| `Escape` | Clear the selection |
+| `N` | Snapping on or off |
+| `Ctrl+Alt+R` | Cycle ripple mode — off, this track, all tracks |
+
+**A marked range wins over the segment under the cursor**, so `Ctrl+A` then
+`Delete` deletes the segment and marking in and out then `Delete` deletes the
+range. Which one a verb is about is always spoken before it happens.
+
+Ripple mode and snapping are **modes, and modes you cannot see have to be
+announced** — both say what they now do rather than only what they are called,
+and neither goes on the undo stack.
 
 **Pasting between tracks** is checked against the target track's medium and
 refused out loud: *"cannot paste video onto Music, which is audio."* On a visual
@@ -562,12 +579,13 @@ Templates: title card, section break, quote, lower third, end screen.
 
 ---
 
-## 10. Rendering **[planned]**
+## 10. Rendering **[built]**
 
 | Key | Action |
 |---|---|
-| `F5` | Draft — 540p, fast, for checking |
-| `Ctrl+M` | Export media — 1080p plus `captions.srt` |
+| `F2` or `Ctrl+M` | Master — 1080p plus `captions.srt` |
+| `Shift+F2` | Draft — 540p, fast, for checking |
+| `Ctrl+F2` | Export presets — **[planned]**, the key is held and does nothing |
 
 Three fidelity tiers:
 
