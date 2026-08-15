@@ -114,29 +114,28 @@ no per-tick rebuild.
 
 ### Open, in the order they matter
 
-1. **`MainWindow` is 4,407 lines**, still the largest file. It is the only file in the tree that is
+1. **`MainWindow` is 4,452 lines**, still the largest file. It is the only file in the tree that is
    genuinely too big. It holds five views' key handlers, every command
    registration and every dialog. The seam is obvious - each view already has a
    `On…Key` method and a build method - and `StreamView`, `ImageView` and
    `TimelineCanvas` show the shape the rest should follow. Nothing is wrong with
-   it; it is just where everything without a home ended up.
+   it; it is just where everything without a home ended up. The subclip, group,
+   multicam, sound and export commands went into `MainWindow.Library.cs` rather
+   than adding another 400 lines to it.
 
 2. **`StreamView` at 1,083 lines** is heading the same way as the window did.
 
 3. **No keyframes anywhere.** Volume over time and position over time are the
    two that a finished edit eventually wants.
 
-4. **Subclips and compound segments do not exist**, and `ROADMAP.md` claimed
-   both as built until this pass. Nothing in the model names a range of a
-   source, and nothing groups segments into one object. Compound is the more
-   valuable of the two without sight: it turns a region into a single thing you
-   can move.
-
-5. **Export presets do not exist.** Phase 8 claimed them.
+4. **Subclips, compound segments and export presets have since been built**,
+   along with audio effects, volume over time and multicam. They were the whole
+   of the "missing" list below, which is now empty of everything except
+   keyframed *position*.
 
 ## 3. Comments and cleanliness
 
-**28,444 lines of source. 15 percent comments.** The rule applied throughout is
+**31,065 lines of source. 15 percent comments.** The rule applied throughout is
 **a comment keeps the reason and drops the restatement**: where a summary
 elaborated on its own first paragraph, the elaboration went, and doc blocks of
 nine lines or more came down from 91 to 59.
@@ -149,7 +148,7 @@ otherwise be re-litigated.
 
 **Grade: A-.** Consistent naming, no dead code, no `TODO`s, no swallowed
 exceptions that hide a failure from the user, no `.Result` or `.Wait()`
-anywhere, and 695 tests that assert on behaviour and spoken output rather than
+anywhere, and 787 tests that assert on behaviour and spoken output rather than
 on implementation. It is held back from an A by two files that are still larger
 than they should be - and, until this pass, by documentation that described a
 different application from the one in the repository.
@@ -169,15 +168,16 @@ overwrite from the bin, detach and reattach audio, duration and Ken Burns for
 stills, and cut, copy and paste across tracks. Every one is reachable, announced
 and undoable.
 
-**What a working editor still wants and this does not have:**
+**What a working editor wanted and this did not have.** All but the last line
+has since been built:
 
-| Missing | Why it matters |
+| Was missing | Now |
 |---|---|
-| **Nested or compound clips** | Grouping a sequence and treating it as one |
-| **Subclips** | Naming a range of a source and reusing it |
-| **Multicam angle switching** | The recording side exists; the switching does not |
-| **Audio effects** | EQ, compression, noise reduction. `afftdn` is installed and would help every laptop-mic recording |
-| **Keyframes of any kind** | Volume over time, position over time |
+| **Nested or compound clips** | `SegmentGroup` - a grouping rather than nesting, so programme time is untouched and the members stay reachable |
+| **Subclips** | `U` in the bin names the marked range; a reference, not a copy |
+| **Multicam angle switching** | Synced by envelope cross-correlation over the cached waveforms; a digit cuts to an angle |
+| **Audio effects** | Named presets per track and per segment, with measure-then-advise on `Ctrl+F4` |
+| **Keyframes of any kind** | Volume over time, as named shapes rather than points. **Position over time is modelled and not yet exposed** |
 
 The commands that do exist are coherent: one verb, one key, one announcement,
 one undo entry. The keyboard scheme is documented with provenance for every

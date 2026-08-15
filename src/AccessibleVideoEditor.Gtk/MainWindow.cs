@@ -742,11 +742,11 @@ public sealed partial class MainWindow
                 SpeakContextHelp();
                 return true;
 
-            // Control is excluded rather than ignored. Ctrl+F2 is documented as
-            // export presets, which does not exist yet - and falling through to
-            // the unmodified case started a full master render instead, which is
-            // a long job you did not ask for and cannot see starting.
-            case Gdk.Constants.KEY_F2 when !control:
+            case Gdk.Constants.KEY_F2 when control:
+                Run("renderPresets");
+                return true;
+
+            case Gdk.Constants.KEY_F2:
                 Run(shift ? "renderDraft" : "export");
                 return true;
 
@@ -780,6 +780,10 @@ public sealed partial class MainWindow
 
             case Gdk.Constants.KEY_F3:
                 Run("find");
+                return true;
+
+            case Gdk.Constants.KEY_F4 when control:
+                Run("audioAdvise");
                 return true;
 
             case Gdk.Constants.KEY_F4:
@@ -1689,6 +1693,29 @@ public sealed partial class MainWindow
                 Run("rippleMode");
                 return true;
 
+            // Groups, effects and volume shapes.
+            case Gdk.Constants.KEY_g or Gdk.Constants.KEY_G when control && shift:
+                Run("group");
+                return true;
+
+            case Gdk.Constants.KEY_g or Gdk.Constants.KEY_G when control && alt:
+                Run("groupList");
+                return true;
+
+            case Gdk.Constants.KEY_e or Gdk.Constants.KEY_E when control && alt:
+                Run("audioEffects");
+                return true;
+
+            case Gdk.Constants.KEY_a or Gdk.Constants.KEY_A when control && alt:
+                Run("audioAutomation");
+                return true;
+
+            // A digit cuts to that camera angle - the same gesture as a digit
+            // cutting to a scene while streaming, so it is learnt once.
+            case >= Gdk.Constants.KEY_1 and <= Gdk.Constants.KEY_9 when !control && !alt:
+                SwitchAngle((int)(args.Keyval - Gdk.Constants.KEY_1) + 1);
+                return true;
+
             case Gdk.Constants.KEY_semicolon when control && shift:
                 Announce(_cursor.Selection?.Describe() ?? "no selection", urgent: true);
                 return true;
@@ -1831,6 +1858,23 @@ public sealed partial class MainWindow
 
             case Gdk.Constants.KEY_i or Gdk.Constants.KEY_I:
                 Run("import");
+                return true;
+
+            // Plain letters are safe here: nothing in the bin is a text field.
+            case Gdk.Constants.KEY_U:
+                Run("subclipList");
+                return true;
+
+            case Gdk.Constants.KEY_u:
+                Run("subclipCreate");
+                return true;
+
+            case Gdk.Constants.KEY_M:
+                Run("multicamSync");
+                return true;
+
+            case Gdk.Constants.KEY_m:
+                Run("multicamCreate");
                 return true;
 
             default:
@@ -2012,6 +2056,7 @@ public sealed partial class MainWindow
         RegisterTransitionActions();
         RegisterFileActions();
         RegisterReviewActions();
+        RegisterLibraryActions();
     }
 
     /// <summary>

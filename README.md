@@ -21,8 +21,10 @@ and audio scrub; recording, takes and the audible VU meter; the card editor;
 fades, transitions and rendering; frame description and quality analysis;
 stills and Ken Burns; the drawn timeline with waveforms; the streamer view with
 scenes, sources, multi-destination streaming and chat on Twitch, YouTube and
-Facebook; and the image editor, including scanner-bed detection and drawing by
-description.
+Facebook; the image editor, including scanner-bed detection and drawing by
+description; subclips and segment groups; audio effects with measure-then-advise;
+volume over time as named shapes; multicam sync and switching; and export
+presets that say what they will crop before they run.
 
 **Every command in the registry is wired**, and a test keeps it that way by
 reading the interface sources and checking that every menu item reaches a
@@ -31,9 +33,13 @@ registry - an entry there feeds `F1`, the palette and the keymap, so one with no
 handler is a key that lies. They live in
 [docs/ROADMAP.md](docs/ROADMAP.md) with their keys reserved.
 
-What a finished editor still wants - subclips, compound segments, multicam
-switching, audio effects, export presets and keyframes - is listed in
-[docs/AUDIT.md](docs/AUDIT.md), along with an honest grade of the codebase.
+What a finished editor still wants is listed in [docs/AUDIT.md](docs/AUDIT.md),
+along with an honest grade of the codebase.
+
+A **Windows or Mac client** would be a second front end over the same Core - GTK
+stays the Linux one. The options and the recommendation are in
+[docs/CLIENTS.md](docs/CLIENTS.md); nothing is built yet, and nothing will be
+until a scrubber spike has been read by NVDA.
 
 See [docs/MANUAL.md](docs/MANUAL.md) for how it works,
 [docs/AUDIT.md](docs/AUDIT.md) for an honest state of the codebase,
@@ -95,6 +101,12 @@ In the **timeline**, `Ctrl+A` selects the segment under the cursor and
 verb, and which one is being acted on is always spoken first. `N` toggles
 snapping and `Ctrl+Alt+R` cycles ripple mode — both say what they now *do*, not
 just what they are called, because a mode you cannot see has to be announced.
+`Ctrl+Shift+G` groups a run of segments under a name, `Ctrl+Alt+E` treats the
+sound, `Ctrl+Alt+A` shapes the volume over time, and **a digit cuts to that
+camera angle** — the same gesture as a digit cutting to a scene while streaming.
+
+In the **media bin**, `U` names the marked range of a source as a subclip and
+`M` makes a multicam group from your cameras.
 
 In the **transcript editor** every structural key takes a modifier, because
 unmodified keys are typing: `Ctrl+Shift+K` delete a segment, `Ctrl+Shift+E` cut

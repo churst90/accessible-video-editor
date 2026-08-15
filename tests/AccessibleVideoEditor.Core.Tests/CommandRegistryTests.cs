@@ -105,11 +105,11 @@ public class CommandRegistryTests
         // unfamiliar binding is guessable rather than memorised.
         Assert.Equal("F2", CommandRegistry.ById("render.master")!.DefaultBinding);
         Assert.Equal("Shift+F2", CommandRegistry.ById("render.draft")!.DefaultBinding);
+        Assert.Equal("Ctrl+F2", CommandRegistry.ById("render.presets")!.DefaultBinding);
 
-        // Ctrl+F2 is held for export presets and deliberately absent until they
-        // exist. It used to be listed, which made the keymap promise a dialog
-        // that no handler provided - and the key fell through to a master render.
-        Assert.Null(CommandRegistry.ById("render.presets"));
+        Assert.Equal("F4", CommandRegistry.ById("review.quality")!.DefaultBinding);
+        Assert.Equal("Shift+F4", CommandRegistry.ById("review.qualityAll")!.DefaultBinding);
+        Assert.Equal("Ctrl+F4", CommandRegistry.ById("audio.advise")!.DefaultBinding);
 
         Assert.Equal("F5", CommandRegistry.ById("track.arm")!.DefaultBinding);
         Assert.Equal("Shift+F5", CommandRegistry.ById("capture.record")!.DefaultBinding);

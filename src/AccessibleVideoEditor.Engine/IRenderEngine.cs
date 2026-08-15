@@ -20,11 +20,17 @@ namespace AccessibleVideoEditor.Engine;
 /// </summary>
 public interface IRenderEngine
 {
+    /// <summary>
+    /// A preset changes only the final encode, never the segment cache: the
+    /// expensive work is identical for every target, so exporting the same edit
+    /// as 1080p and then as a vertical short re-encodes once rather than twice.
+    /// </summary>
     Task<RenderOutput> RenderAsync(
         Project project,
         RenderQuality quality,
         IProgress<RenderProgress>? progress = null,
-        CancellationToken ct = default);
+        CancellationToken ct = default,
+        ExportPreset? preset = null);
 
     /// <summary>Audio-only mix. Fast, and the preview that matters most here.</summary>
     Task<RenderOutput> RenderAudioAsync(Project project, CancellationToken ct = default);
@@ -45,7 +51,11 @@ public enum RenderQuality
     Master,
 }
 
-public sealed record RenderOutput(string Path, double Duration, RenderQuality Quality);
+public sealed record RenderOutput(
+    string Path,
+    double Duration,
+    RenderQuality Quality,
+    ExportPreset? Preset = null);
 
 public sealed record RenderProgress(string Stage, double Fraction, int SegmentsDone, int SegmentsTotal)
 {

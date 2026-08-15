@@ -156,14 +156,27 @@ Inserting a card inserts a **new segment** with its own duration.
   (Until then, `atrack=` already selects *which* audio track of a source plays —
   0 mix, 1 microphone, 2 system audio.)
 - **Subclips** — mark a range of a source and name it, so "the good intro" is a
-  thing you can insert **[planned]**
+  thing you can insert **[built]**. `U` in the bin names the marked range,
+  `Shift+U` lists them, Enter inserts at the cursor. A duplicate name is refused
+  rather than numbered: "good intro" and "good intro 2" are indistinguishable in
+  a list read aloud, which defeats the point of naming them.
 - **Compound segments** — collapse ten segments into one named thing. Very
   useful without sight: it turns a region into a single object you can move.
-  **[planned]**
+  **[built]** as a *grouping* rather than as nesting — see below.
 
-Those last two were marked built in an earlier revision of this file and are
-not: nothing in the model names a range of a source, and nothing groups
-segments. Everything else in this phase is built and tested.
+### Why groups rather than nested clips
+
+Every other editor makes a compound a container: the segments go inside it and
+you open it to reach them. That would mean programme time had to be computed
+through a tree, and everything that maps time — navigation, the transcript,
+overlay anchors, the render plan, the EDL — would have to learn about depth.
+
+A `SegmentGroup` instead records that a run of segments belongs together. It
+buys the thing people actually want from a compound, *one object I can move*,
+without moving a single invariant. It also keeps something nesting takes away:
+the members stay individually reachable, and `Collapsed` only decides whether
+navigation stops on them. A group is one object when you are moving it and ten
+segments when you are fixing one, with no converting between the two.
 
 ---
 
@@ -190,9 +203,11 @@ The largest single remaining port: ~1,400 lines of filtergraph building in
   reordering costs nothing
 - Holes block the master render **[built]** — `FfmpegRenderEngine` refuses a
   master while any hole remains, and counts them
-- Export presets: YouTube 1080p, shorts 9:16, audio only **[planned]** — nothing
-  in Engine takes a preset yet. `Ctrl+F2` is held for it and does nothing;
-  it used to fall through and start a master render instead
+- Export presets: YouTube 1080p, shorts 9:16, audio only **[built]** — `Ctrl+F2`.
+  Each one **says what it will cost before it runs**: a vertical export crops
+  about 68 percent of the width of every frame, and that is otherwise something
+  you find out by watching the result. A preset changes only the final encode, so
+  exporting the same edit twice re-renders the segments once
 - Progress announced periodically, not on every tick
 
 ---
@@ -621,6 +636,110 @@ over there", and it turns out to be the control a white balance needed.
 
 ---
 
+## Phase 14 — Audio effects **[built]**
+
+The largest audible gap. A talking-head recording off a room mic wants noise
+reduction and levelling, and neither existed.
+
+A mixer answers "what is happening" by eye — knobs and a spectrum. The
+replacement is the one the image editor already proved for colour: **named
+presets plus a spoken number**.
+
+- Effects are named for **what they are for** — "room tone removal", "rumble
+  filter", "levelling" — never for their filter. You choose the decision; the
+  number is said after it and can be nudged, but you never need it to choose
+- **One control per effect.** A compressor with four numbers is a compressor you
+  have to be taught; the presets encode the shape that matters
+- Every setting is stated in the unit an engineer says out loud — dB, hertz,
+  "4 to 1", LUFS — not as a percentage of an invisible slider
+- **Effects run in a fixed order regardless of the order they were added.**
+  Filtering before compression, compression before loudness. A compressor
+  pumping on rumble you were about to remove is a mistake you would need the
+  theory to predict
+- Ready-made chains — close mic, laptop mic, noisy room, voice polish, broadcast
+- A chain **reads back as the sentence that would create it**, in the order it
+  will actually run
+
+### Track effects and segment effects are different **[built]**
+
+Noise reduction is a property of the microphone and the room, so it belongs on
+the **track** — setting it forty times is both tedious and a way to end up with
+forty slightly different settings. A **segment's** own effects are for fixing one
+bad take. Track effects run first, and which one you changed is always said.
+
+### Measure, then advise in the words of the commands **[built]**
+
+`Ctrl+F4`. The measurements already existed — loudness, true peak, noise floor —
+and nothing read them back as a decision.
+
+*"The noise floor is at -35 decibels, which is audible under speech. Suggested:
+room tone removal at 12 dB, rumble filter below 88 hertz."*
+
+The advice **names the thing you then press**, exactly as `Shift+V` does in the
+image editor. A worse measurement suggests a harder setting, so the suggestion
+arrives roughly right rather than at a default. Sound that measures fine is told
+so rather than met with silence — a command that says nothing reads as one that
+failed.
+
+---
+
+## Phase 15 — Volume over time **[built]**
+
+What every other editor draws as a curve with draggable points, which is the
+least accessible control in any of them.
+
+A curve is a picture of a decision, and the decision has a name. So the model
+stores **the shape** — duck, ramp, rise, ease in, ease out, steady — rather than
+a list of coordinates. That makes it describable (*"volume dips to -18 decibels
+over 4 seconds, then comes back"*), adjustable by keystroke, and impossible to
+leave a stray point in that you cannot find.
+
+Arbitrary point editing is **deliberately not offered**. Every use of it that
+matters for talking-head video is one of these shapes.
+
+`Ctrl+Alt+A`. Position and opacity over time use the same model and are not yet
+exposed.
+
+---
+
+## Phase 16 — Multicam **[built]**
+
+The recording side already worked. What was missing was knowing how far apart
+two files start, and being able to switch without finding the same moment in
+each one by hand.
+
+### Synced by sound **[built]**
+
+By **envelope cross-correlation**, not timecode: two consumer cameras have no
+shared clock, and a clap is something you can do without seeing anything. It
+runs on the peak data already cached for drawing waveforms, so it costs no extra
+decoding, and it is robust to the two cameras having completely different
+microphones — which correlating raw samples is not.
+
+**Confidence is kept and spoken**, because a confident wrong answer is the
+failure mode of audio sync. Two unrelated recordings still produce a best shift,
+and reporting that as a sync is how a whole edit ends up a second out. Below a
+threshold it says so and refuses; the angles that matched poorly are **named
+individually**, because which camera is unreliable decides whether you can use
+it and a count does not tell you that.
+
+### Switching **[built]**
+
+**A digit cuts to that angle** — deliberately the same gesture as a digit cutting
+to a scene in the stream view, so it is learnt once.
+
+A switch **splits and re-points**: the segment is cut at the cursor and the
+second half plays a different camera. Because the offset is known, the cut is
+frame-accurate by construction rather than by you finding the moment twice. The
+words stay with the segment, because a transcript belongs to the take and not to
+the camera.
+
+Cutting to an unsynced angle is **refused rather than done wrongly** — an
+unsynced cut looks like a working edit and is off by however far the files
+differ. So is cutting to a camera that was not running at that moment.
+
+---
+
 ## Candidate features — what other editors have that this does not
 
 Recorded so the list exists rather than being rediscovered. Each notes how it
@@ -632,9 +751,9 @@ whether it is worth building.
 | **Chroma key** (green screen) | Automatic key, then **measurement**: what fraction of the frame keyed, where spill remains, whether edges are ragged. Plus `F8` to have the result described. You cannot see a key edge, but you can be told about it. |
 | **Colour correction** | Apply by description - "warmer by 200 Kelvin", "lift the shadows" - never curves. The analysis already produces the numbers; this is the other half of it. |
 | **Auto-reframe to vertical** | The face tracker already exists, so a 9:16 crop that keeps you centred is nearly free. Announces how much of the frame it had to lose. |
-| **Noise reduction, EQ, compression** | Named presets with a before-and-after audition, and the level meter to confirm. `afftdn` is genuinely valuable for a laptop mic. |
+| **Noise reduction, EQ, compression** | **[built]** — see phase 14 |
 | **Stabilisation** | One toggle; report how much it had to crop. |
-| **Multicam angle switching** | Audio-based sync (the existing `sync_offset.py` approach), then a key per angle. Announced on every switch. |
+| **Multicam angle switching** | **[built]** — see phase 16 |
 | **Beat-synced cutting** | Detect the music's tempo and snap cuts to it. The only version of a "grid" that means anything in video. |
 | **Speed ramps** | Named shapes - "ease into slow motion" - rather than keyframe curves. |
 | **Proxy media** | Purely mechanical; no accessibility question. Matters once files are large. |
@@ -698,4 +817,6 @@ command listed with no handler is a key that lies. They come back when they work
 | GL Transitions / frei0r | Needs an ffmpeg rebuild. 58 xfade transitions is already more than any sane video uses. |
 | Musical bar/beat grid as a primary view | Video has no meter. Tempo-derived snapping only. |
 | Bundling ffmpeg or Whisper | Personal build. Keeps the x264 GPL question off the table. |
-| Cross-platform UI in one codebase | GTK does not map to UIA. Windows gets its own front end over the same Core. |
+| Cross-platform UI in one codebase | GTK does not map to UIA. Windows gets its own front end over the same Core — see [CLIENTS.md](CLIENTS.md). |
+| Arbitrary keyframe points | A curve is a picture of a decision, and the decision has a name. Named shapes instead — phase 15. |
+| Nested compound clips | Programme time would have to be computed through a tree. A grouping buys what people want from a compound without moving an invariant — phase 6. |

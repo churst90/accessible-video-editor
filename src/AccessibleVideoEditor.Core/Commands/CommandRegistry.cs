@@ -50,9 +50,8 @@ public static class CommandRegistry
             "1080p plus captions. Blocked while holes remain.", Alternate: "Ctrl+M"),
         new("render.draft", "Render draft", "Shift+F2", CommandGroup.Output, KeyOrigin.Invented,
             "540p, fast, for checking."),
-        // Export presets are designed but unbuilt - nothing in Engine takes a
-        // preset yet. Ctrl+F2 is held for it, and no longer falls through to a
-        // master render. See ROADMAP.md, phase 8.
+        new("render.presets", "Export presets", "Ctrl+F2", CommandGroup.Output, KeyOrigin.Invented,
+            "YouTube, vertical, square or audio only. Says what each one will crop before it runs."),
 
         new("find.next", "Find in transcript", "F3", CommandGroup.Navigation, KeyOrigin.Universal,
             "F3 is find-next everywhere."),
@@ -226,6 +225,40 @@ public static class CommandRegistry
         new("edit.snap", "Toggle snapping", "N", CommandGroup.Editing, KeyOrigin.Reaper,
             Context: CommandContext.Timeline),
         new("edit.captions", "Toggle caption on this element", "Ctrl+Shift+C", CommandGroup.Editing, KeyOrigin.Invented),
+
+        // ---- groups, subclips, angles ------------------------------------------
+        new("edit.group", "Group these segments", "Ctrl+Shift+G", CommandGroup.Editing, KeyOrigin.Invented,
+            "A run of segments becomes one named thing you can move, cut and restore as one.",
+            Context: CommandContext.Timeline),
+        new("group.list", "Groups", "Ctrl+Alt+G", CommandGroup.Editing, KeyOrigin.Invented,
+            "Collapse, expand, rename, ungroup or delete. Enter goes to one.",
+            Context: CommandContext.Timeline),
+        new("subclip.create", "Make a subclip", "U", CommandGroup.Media, KeyOrigin.Premiere,
+            "Names the marked range of this source. Premiere uses Ctrl+U; plain letters are safe in the bin.",
+            Context: CommandContext.MediaBin),
+        new("subclip.list", "Subclips", "Shift+U", CommandGroup.Media, KeyOrigin.Invented,
+            "Insert, overwrite, rename or remove. Enter inserts at the cursor.",
+            Context: CommandContext.MediaBin),
+        new("multicam.create", "Make a multicam group", "M", CommandGroup.Media, KeyOrigin.Invented,
+            "Two or more cameras on the same thing.", Context: CommandContext.MediaBin),
+        new("multicam.sync", "Sync the angles by sound", "Shift+M", CommandGroup.Media, KeyOrigin.Invented,
+            "Lines the cameras up by their audio and says how well each one matched.",
+            Context: CommandContext.MediaBin),
+        new("multicam.switch", "Cut to an angle", "1 to 9", CommandGroup.Editing, KeyOrigin.UniversalNle,
+            "A digit cuts to that camera at the cursor - the same idea as a digit cutting to a scene "
+            + "while streaming.",
+            Context: CommandContext.Timeline),
+
+        // ---- sound -------------------------------------------------------------
+        new("audio.effects", "Audio effects here", "Ctrl+Alt+E", CommandGroup.Editing, KeyOrigin.Invented,
+            "Named treatments for this track or this segment, each read back with its setting.",
+            Context: CommandContext.Timeline),
+        new("audio.advise", "What is wrong with this sound", "Ctrl+F4", CommandGroup.Review,
+            KeyOrigin.Invented,
+            "Measures the recording and suggests the effects by name."),
+        new("audio.automation", "Volume over time", "Ctrl+Alt+A", CommandGroup.Editing, KeyOrigin.Invented,
+            "Named shapes - duck, ramp, ease - rather than a curve with points on it.",
+            Context: CommandContext.Timeline),
 
         // ---- tracks (Tracks pane; plain letters are safe there) ----------------
         new("track.mute", "Mute or unmute", "M", CommandGroup.Tracks, KeyOrigin.UniversalNle,
@@ -716,6 +749,10 @@ public enum CommandGroup
     Selection,
     Editing,
     Tracks,
+
+    /// <summary>The bin: sources, subclips and camera angles.</summary>
+    Media,
+
     Overlays,
     Review,
     Capture,

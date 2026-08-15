@@ -113,6 +113,20 @@ public abstract class SpineElement
     }
 
     /// <summary>
+    /// Audio treatment for this segment alone - a fix for one bad take rather
+    /// than a property of the microphone. Track effects handle the latter, and
+    /// keeping them separate is what makes it possible to say which one you just
+    /// changed. Track effects run first; see <see cref="Track.Effects"/>.
+    /// </summary>
+    public List<AudioEffect> Effects { get; set; } = [];
+
+    /// <summary>
+    /// Values that change over this segment - volume ducking, an opacity ramp.
+    /// Named shapes rather than keyframes; see <see cref="Automation"/>.
+    /// </summary>
+    public List<Automation> Automation { get; set; } = [];
+
+    /// <summary>
     /// A slow move across a still. Meaningless on moving footage and ignored
     /// there.
     /// </summary>
@@ -136,7 +150,12 @@ public abstract class SpineElement
 /// <summary>A run of speech from a transcribed take. The unit the transcript editor works in.</summary>
 public sealed class SpanElement : SpineElement
 {
-    public required SourceId Source { get; init; }
+    /// <summary>
+    /// Settable, not init-only: cutting to another camera angle changes which
+    /// file a segment plays while it keeps its identity, its place, its words
+    /// and anything anchored to it - the same rule takes already follow.
+    /// </summary>
+    public required SourceId Source { get; set; }
     public required double SourceIn { get; set; }
     public required double SourceOut { get; set; }
 
@@ -163,7 +182,8 @@ public readonly record struct Word(string Text, double Start, double End);
 /// </summary>
 public sealed class ClipElement : SpineElement
 {
-    public required SourceId Source { get; init; }
+    /// <summary>Settable for the same reason as <see cref="SpanElement.Source"/>.</summary>
+    public required SourceId Source { get; set; }
     public double SourceIn { get; set; }
     public required double SourceOut { get; set; }
     public int AudioTrack { get; set; }

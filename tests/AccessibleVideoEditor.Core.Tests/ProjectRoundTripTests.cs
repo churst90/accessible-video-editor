@@ -70,7 +70,93 @@ public class ProjectRoundTripTests : IDisposable
             Duration = 0.8,
         });
 
+        project.Subclips.Add(new Subclip
+        {
+            Id = Ids.NewSubclip(),
+            Source = source.Id,
+            Name = "the good intro",
+            In = 12,
+            Out = 20,
+            Note = "the one without the stumble",
+        });
+
+        project.Groups.Add(new SegmentGroup
+        {
+            Id = Ids.NewGroup(),
+            Name = "the intro",
+            Members = [project.Spine[0].Id, project.Spine[1].Id],
+            Collapsed = false,
+        });
+
+        var second = new Source { Id = Ids.NewSource(), Path = "/tmp/close.mkv", Duration = 60 };
+        project.Sources.Add(second);
+
+        project.Multicams.Add(new MulticamGroup
+        {
+            Id = Ids.NewGroup(),
+            Name = "interview",
+            ActiveAngle = 1,
+            Angles =
+            [
+                new() { Source = source.Id, Name = "wide", Offset = 0, SyncConfidence = 0.95 },
+                new() { Source = second.Id, Name = "close", Offset = 2.5, SyncConfidence = 0.82 },
+            ],
+        });
+
+        project.Tracks.First(t => t.Kind == TrackKind.Audio).Effects =
+            AudioChains.Build("Close mic")!;
+
+        project.Spine[0].Effects.Add(AudioEffect.Of(AudioEffectKind.DeEss, 0.7));
+        project.Spine[0].Automation.Add(Automation.Duck(0, -18, 4));
+
         return project;
+    }
+
+    [Fact]
+    public async Task Subclips_groups_and_multicam_angles_survive_the_round_trip()
+    {
+        await ProjectJson.SaveAsync(Edited(), _directory);
+        var after = await ProjectJson.LoadAsync(_directory);
+
+        var subclip = Assert.Single(after.Subclips);
+        Assert.Equal("the good intro", subclip.Name);
+        Assert.Equal(8, subclip.Duration, 3);
+        Assert.Equal("the one without the stumble", subclip.Note);
+
+        var group = Assert.Single(after.Groups);
+        Assert.Equal("the intro", group.Name);
+        Assert.Equal(2, group.Members.Count);
+        Assert.False(group.Collapsed);
+
+        // The members must still name real elements. Held by ID, so a broken
+        // round trip would leave a group that silently matches nothing.
+        Assert.All(group.Members, id => Assert.NotNull(after.Element(id)));
+
+        var multicam = Assert.Single(after.Multicams);
+        Assert.Equal(1, multicam.ActiveAngle);
+        Assert.Equal("close", multicam.Angles[1].Name);
+        Assert.Equal(2.5, multicam.Angles[1].Offset, 3);
+        Assert.Equal(0.82, multicam.Angles[1].SyncConfidence, 3);
+    }
+
+    [Fact]
+    public async Task Audio_effects_and_automation_survive_the_round_trip()
+    {
+        await ProjectJson.SaveAsync(Edited(), _directory);
+        var after = await ProjectJson.LoadAsync(_directory);
+
+        var track = after.Tracks.First(t => t.Kind == TrackKind.Audio);
+        Assert.NotEmpty(track.Effects);
+        Assert.Contains(track.Effects, e => e.Kind == AudioEffectKind.NoiseReduction);
+
+        var effect = Assert.Single(after.Spine[0].Effects);
+        Assert.Equal(AudioEffectKind.DeEss, effect.Kind);
+        Assert.Equal(0.7, effect.Amount, 3);
+
+        var automation = Assert.Single(after.Spine[0].Automation);
+        Assert.Equal(AutomationShape.Dip, automation.Shape);
+        Assert.Equal(-18, automation.To, 3);
+        Assert.Equal(4, automation.Length, 3);
     }
 
     [Fact]

@@ -55,6 +55,22 @@ public readonly record struct MarkerId(string Value) : IStableId
     public override string ToString() => Value ?? string.Empty;
 }
 
+/// <summary>Identifies a <see cref="Model.Subclip"/> - a named range of a source.</summary>
+public readonly record struct SubclipId(string Value) : IStableId
+{
+    public bool IsUnset => string.IsNullOrEmpty(Value);
+
+    public override string ToString() => Value ?? string.Empty;
+}
+
+/// <summary>Identifies a <see cref="Model.SegmentGroup"/>.</summary>
+public readonly record struct GroupId(string Value) : IStableId
+{
+    public bool IsUnset => string.IsNullOrEmpty(Value);
+
+    public override string ToString() => Value ?? string.Empty;
+}
+
 public static class Ids
 {
     // Crockford base32 minus the vowels, so generated IDs can't spell anything
@@ -79,6 +95,8 @@ public static class Ids
     public static ElementId NewElement() => new(New());
     public static ItemId NewItem() => new(New());
     public static MarkerId NewMarker() => new(New());
+    public static SubclipId NewSubclip() => new(New());
+    public static GroupId NewGroup() => new(New());
     public static Model.TakeId NewTake() => new(New());
 }
 

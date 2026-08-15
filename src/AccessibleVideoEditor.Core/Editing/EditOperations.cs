@@ -714,16 +714,41 @@ public static class EditOperations
 
         if (duration <= 0) return EditResult.NoChange($"{Path.GetFileName(source.Path)} has no duration");
 
+        InsertRange(project, sourceId, 0, duration, programmeTime, audioTrack: 0);
+
+        return EditResult.Ok(
+            $"inserted {Path.GetFileName(source.Path)}, {Timecode.Speak(duration)}"
+            + (isStill ? " as a still" : string.Empty));
+    }
+
+    /// <summary>
+    /// Puts one range of one source on the spine at the cursor, rippling. The
+    /// single place a clip is added, so inserting a whole source, a subclip and
+    /// a marked range all land identically - three code paths building the same
+    /// element differently is how they drift apart.
+    /// </summary>
+    public static ElementId InsertRange(
+        Project project,
+        SourceId sourceId,
+        double sourceIn,
+        double sourceOut,
+        double programmeTime,
+        int audioTrack)
+    {
+        var isStill = project.SourceOf(sourceId)?.Kind == SourceKind.Image;
+
         SplitAt(project, programmeTime);
 
         var index = Math.Clamp(InsertionIndexFor(project, programmeTime), 0, project.Spine.Count);
+        var id = Ids.NewElement();
 
         project.Spine.Insert(index, new ClipElement
         {
-            Id = Ids.NewElement(),
+            Id = id,
             Source = sourceId,
-            SourceIn = 0,
-            SourceOut = duration,
+            SourceIn = sourceIn,
+            SourceOut = sourceOut,
+            AudioTrack = audioTrack,
             TransitionIn = Transition.Cut,
 
             // A still that does not move reads as a frozen video.
@@ -732,9 +757,7 @@ public static class EditOperations
                 : KenBurns.None,
         });
 
-        return EditResult.Ok(
-            $"inserted {Path.GetFileName(source.Path)}, {Timecode.Speak(duration)}"
-            + (isStill ? " as a still" : string.Empty));
+        return id;
     }
 
     /// <summary>
@@ -892,7 +915,7 @@ public static class EditOperations
     /// re-anchoring is the part a visual editor gets for free by showing you
     /// what moved; here it has to be computed and announced.
     /// </summary>
-    private static double RemoveRange(Project project, double from, double to, out List<string> warnings)
+    internal static double RemoveRange(Project project, double from, double to, out List<string> warnings)
     {
         SplitAt(project, from);
         SplitAt(project, to);

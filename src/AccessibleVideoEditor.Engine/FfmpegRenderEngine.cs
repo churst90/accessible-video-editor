@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Globalization;
 using System.Text;
 using AccessibleVideoEditor.Core;
 using AccessibleVideoEditor.Core.Model;
@@ -20,7 +21,8 @@ public sealed class FfmpegRenderEngine(string ffmpegPath = "ffmpeg") : IRenderEn
         Project project,
         RenderQuality quality,
         IProgress<RenderProgress>? progress = null,
-        CancellationToken ct = default)
+        CancellationToken ct = default,
+        ExportPreset? preset = null)
     {
         var root = project.RootPath ?? Directory.GetCurrentDirectory();
         var map = TimelineMap.Build(project);
@@ -74,7 +76,7 @@ public sealed class FfmpegRenderEngine(string ffmpegPath = "ffmpeg") : IRenderEn
 
         var outputPath = Path.Combine(
             outputDirectory,
-            quality == RenderQuality.Draft ? "draft.mp4" : "master.mp4");
+            preset?.FileName ?? (quality == RenderQuality.Draft ? "draft.mp4" : "master.mp4"));
 
         var runs = RenderPlan.Runs(project, map);
         var joined = Path.Combine(cache.Directory, "joined.mkv");
@@ -92,9 +94,11 @@ public sealed class FfmpegRenderEngine(string ffmpegPath = "ffmpeg") : IRenderEn
 
         progress?.Report(new RenderProgress("overlays", 0.92, done, map.Elements.Count));
 
-        await FinishAsync(project, map, joined, outputPath, quality, ct).ConfigureAwait(false);
+        await FinishAsync(project, map, joined, outputPath, quality, preset, ct).ConfigureAwait(false);
 
-        if (quality == RenderQuality.Master)
+        // Captions go with a master, and with any preset that has a picture to
+        // put them over. An audio-only export has nothing to caption.
+        if (quality == RenderQuality.Master && preset is not { AudioOnly: true })
         {
             await Captions.WriteAsync(
                 project, map, Path.Combine(outputDirectory, "captions.srt"), ct).ConfigureAwait(false);
@@ -102,7 +106,7 @@ public sealed class FfmpegRenderEngine(string ffmpegPath = "ffmpeg") : IRenderEn
 
         progress?.Report(new RenderProgress("done", 1, done, map.Elements.Count));
 
-        return new RenderOutput(outputPath, map.Duration, quality);
+        return new RenderOutput(outputPath, map.Duration, quality, preset);
     }
 
     /// <summary>
@@ -207,6 +211,7 @@ public sealed class FfmpegRenderEngine(string ffmpegPath = "ffmpeg") : IRenderEn
         string joined,
         string output,
         RenderQuality quality,
+        ExportPreset? preset,
         CancellationToken ct)
     {
         var height = quality == RenderQuality.Draft ? 540 : project.Settings.CanvasHeight;
@@ -215,13 +220,24 @@ public sealed class FfmpegRenderEngine(string ffmpegPath = "ffmpeg") : IRenderEn
                               / project.Settings.CanvasHeight / 2) * 2
             : project.Settings.CanvasWidth;
 
-        var overlays = OverlayFilters.Video(project, map, width, height, FontPath());
+        // Overlays are composed at the project's canvas size and the whole
+        // frame is reshaped afterwards, so a title stays where it was put
+        // relative to the picture rather than sliding as the shape changes.
+        var overlays = preset is { AudioOnly: true }
+            ? null
+            : OverlayFilters.Video(project, map, width, height, FontPath());
+
+        if (preset is { AudioOnly: false } shaped && Reshape(shaped, width, height) is { } reshape)
+        {
+            overlays = overlays is null ? reshape : $"{overlays},{reshape}";
+        }
+
         var music = OverlayFilters.Music(project, map);
 
         var loudness = quality == RenderQuality.Master ? "loudnorm=I=-14:TP=-1.5:LRA=11" : null;
 
         // Nothing to add: the joined file is already the answer.
-        if (overlays is null && music is null && loudness is null)
+        if (overlays is null && music is null && loudness is null && preset is null)
         {
             File.Copy(joined, output, overwrite: true);
             return;
@@ -253,17 +269,57 @@ public sealed class FfmpegRenderEngine(string ffmpegPath = "ffmpeg") : IRenderEn
 
         if (loudness is not null && music is null) arguments.AddRange(["-af", loudness]);
 
-        arguments.AddRange([
-            "-c:v", "libx264",
-            "-preset", quality == RenderQuality.Draft ? "veryfast" : "medium",
-            "-crf", quality == RenderQuality.Draft ? "26" : "18",
-            "-pix_fmt", "yuv420p",
-            "-c:a", "aac", "-b:a", "192k",
-            "-shortest",
-            output,
-        ]);
+        if (preset is { AudioOnly: true })
+        {
+            arguments.AddRange([
+                "-vn",
+                "-c:a", "aac", "-b:a", preset.AudioBitrate,
+                output,
+            ]);
+        }
+        else
+        {
+            arguments.AddRange([
+                "-c:v", "libx264",
+                "-preset", quality == RenderQuality.Draft ? "veryfast" : "medium",
+                "-crf", (preset?.Crf ?? (quality == RenderQuality.Draft ? 26 : 18))
+                    .ToString(CultureInfo.InvariantCulture),
+                "-pix_fmt", "yuv420p",
+                "-c:a", "aac", "-b:a", preset?.AudioBitrate ?? "192k",
+            ]);
+
+            if (preset?.Fps is { } fps)
+            {
+                arguments.AddRange(["-r", SegmentFilters.Number(fps)]);
+            }
+
+            arguments.AddRange(["-shortest", output]);
+        }
 
         await RunAsync(arguments, ct).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Scales the finished frame to the preset's shape. Null when the preset
+    /// already matches, so an export that changes nothing does not pay for a
+    /// rescale.
+    ///
+    /// <c>Fill</c> crops and <c>Fit</c> pads. Both are lossy in their own way -
+    /// one loses picture and the other loses screen - which is why
+    /// <see cref="ExportPreset.DescribeCost"/> says which before the render runs.
+    /// </summary>
+    public static string? Reshape(ExportPreset preset, int width, int height)
+    {
+        if (preset.Width <= 0 || preset.Height <= 0) return null;
+        if (preset.Width == width && preset.Height == height) return null;
+
+        var w = preset.Width;
+        var h = preset.Height;
+
+        return preset.Fit == FitMode.Fit
+            ? $"scale={w}:{h}:force_original_aspect_ratio=decrease,"
+              + $"pad={w}:{h}:(ow-iw)/2:(oh-ih)/2:color=black,setsar=1"
+            : $"scale={w}:{h}:force_original_aspect_ratio=increase,crop={w}:{h},setsar=1";
     }
 
     /// <summary>

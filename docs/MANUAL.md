@@ -133,9 +133,9 @@ One domain per key, stacked, so an unfamiliar binding is guessable:
 | Key | Plain | Shift | Ctrl |
 |---|---|---|---|
 | `F1` | What can I do here | Read the whole keymap | About this application |
-| `F2` | Render master | Render draft | *(held for export presets)* |
+| `F2` | Render master | Render draft | Export presets |
 | `F3` | Find in transcript | Find previous | |
-| `F4` | Quality of this segment | Quality across the project | |
+| `F4` | Quality of this segment | Quality across the project | What is wrong with this sound |
 | `F5` | Arm or disarm this track | Start or stop recording | Choose capture device |
 | `F6` | Next view | Previous view | |
 | `F7` | To-do list | | |
@@ -165,8 +165,44 @@ What you can do here:
 - `Enter` — open a source's transcript in the Transcript view
 - `,` — **insert** the marked range at the cursor, rippling
 - `.` — **overwrite** the marked range at the cursor
+- `U` — **make a subclip** of the marked range
+- `Shift+U` — the subclip list; Enter inserts one at the cursor
+- `M` / `Shift+M` — make a multicam group / sync its angles by sound
 - `F4` — picture and sound quality report
 - Applications key — context menu
+
+### Subclips
+
+A named range of a source. *"The good intro"* becomes something you can insert
+rather than a pair of numbers you have to find again — which without sight means
+listening through the whole take a second time.
+
+It is a **reference, not a copy**: nothing is extracted and nothing is rendered,
+so removing a subclip after using it leaves what you already put on the timeline
+alone. The command says so, because it sounds destructive and is not.
+
+Marks given backwards are read as a range rather than refused — marking out
+before in is normal when you realise you wanted the bit you just passed. Marking
+past the end of a take clamps. A **duplicate name is refused rather than
+numbered**: "good intro" and "good intro 2" are indistinguishable in a list read
+aloud, which defeats the point of naming them.
+
+### Multicam
+
+Two or more cameras on the same thing. `M` makes a group; `Shift+M` lines them up
+**by sound**, because two consumer cameras have no shared clock and a clap is
+something you can do without seeing anything.
+
+Syncing reports **how well each angle matched**, and names the ones that matched
+badly rather than counting them — which camera is unreliable decides whether you
+can use it. An angle that did not match well enough is refused for switching
+rather than cut at the wrong moment, because an unsynced cut looks like a
+working edit and is off by however far the files differ.
+
+In the timeline, **a digit cuts to that angle** — the same gesture as a digit
+cutting to a scene while streaming. The cut splits at the cursor and the second
+half plays the other camera, frame-accurate because the offset is known. Your
+words stay with the segment: a transcript belongs to the take, not to the camera.
 
 **Importing several videos and cutting them together** is the normal workflow:
 import each one, transcribe it, open its transcript, select the sentences you
@@ -277,6 +313,11 @@ The ladder, coarse to fine:
 | `Escape` | Clear the selection |
 | `N` | Snapping on or off |
 | `Ctrl+Alt+R` | Cycle ripple mode — off, this track, all tracks |
+| `Ctrl+Shift+G` | Group the marked segments under a name |
+| `Ctrl+Alt+G` | The group list — collapse, rename, ungroup, delete |
+| `Ctrl+Alt+E` | Audio effects, on this track or this segment |
+| `Ctrl+Alt+A` | Volume over time |
+| `1` to `9` | Cut to that camera angle |
 
 **A marked range wins over the segment under the cursor**, so `Ctrl+A` then
 `Delete` deletes the segment and marking in and out then `Delete` deletes the
@@ -579,13 +620,90 @@ Templates: title card, section break, quote, lower third, end screen.
 
 ---
 
+## 9b. Groups, sound and volume over time **[built]**
+
+### Groups
+
+`Ctrl+Shift+G` turns a marked run of segments into one named thing — "the
+intro", "the demo". `Ctrl+Alt+G` lists them, and from that list you can go to
+one, collapse or expand it, rename it, ungroup it, or delete it and its
+segments.
+
+**Collapsed** means the group moves, cuts and restores as one. **Expanded** means
+its members behave exactly as they did before, and the name is just something the
+cursor mentions. Toggling says which it now is *and what that means*, not just
+the word.
+
+This is a grouping rather than a nested clip, so the segments are still there and
+still individually reachable — a group is one object when you are moving it and
+ten segments when you are fixing one. Grouping, ungrouping and deleting all say
+**how many segments** they touched, and deleting says how long they were: it is
+the most destructive thing a group can do, and "deleted the intro" does not tell
+you how much of the video just went.
+
+A group broken apart by an insert **refuses to move** rather than carrying the
+stranger along or leaving it behind.
+
+### Audio effects
+
+`Ctrl+Alt+E`, and it asks first whether you mean **this track** or **this
+segment** — because which one you changed is otherwise impossible to tell
+afterwards. Noise reduction is a property of the microphone and the room, so it
+belongs on the track; a segment's own effects are for fixing one bad take.
+
+Effects are named for what they are for — *room tone removal*, *rumble filter*,
+*levelling*, *presence lift* — never for the filter underneath. Each has **one
+control**, said in the unit an engineer would use: dB, hertz, "4 to 1", LUFS.
+Ready-made chains cover the real cases: close mic, laptop mic, noisy room, voice
+polish, broadcast.
+
+They run in a **fixed order regardless of the order you added them** — filtering,
+then compression, then loudness. A compressor pumping on rumble you were about to
+remove is a mistake you would need the theory to predict.
+
+`Ctrl+F4` measures the recording and suggests the effects **by name**:
+
+> *"The noise floor is at -35 decibels, which is audible under speech. Suggested:
+> room tone removal at 12 dB, rumble filter below 88 hertz."*
+
+The advice names the thing you then press, and a worse measurement suggests a
+harder setting. Sound that measures fine is told so rather than met with
+silence.
+
+### Volume over time
+
+`Ctrl+Alt+A`. Not a curve with points on it — a **named shape**: duck, fade up,
+fade down, ease in, or hold quieter. A duck goes down and comes back inside its
+own length, which is what music under a voice actually does.
+
+Each reads back as the sentence that made it: *"volume dips to -18 decibels over
+4 seconds, then comes back"*.
+
+---
+
 ## 10. Rendering **[built]**
 
 | Key | Action |
 |---|---|
 | `F2` or `Ctrl+M` | Master — 1080p plus `captions.srt` |
 | `Shift+F2` | Draft — 540p, fast, for checking |
-| `Ctrl+F2` | Export presets — **[planned]**, the key is held and does nothing |
+| `Ctrl+F2` | Export presets |
+
+### Export presets
+
+YouTube 1080p, YouTube 4K, Shorts, Square, Audio only, Small preview. Named for
+**what they are for**, because "fit for Shorts" is a decision and "1080 by 1920"
+is arithmetic you would have to do first.
+
+Every preset **says what it will cost before it runs**:
+
+> *"Shorts. Vertical, for Shorts, Reels and TikTok. 1080 by 1920. The sides are
+> cropped, losing about 68 percent of the frame."*
+
+That is the part you cannot see. A preset changes only the final encode, so
+exporting the same edit as 1080p and then as a vertical short re-renders the
+segments once, not twice — and each writes to its own file rather than
+overwriting the last.
 
 Three fidelity tiers:
 

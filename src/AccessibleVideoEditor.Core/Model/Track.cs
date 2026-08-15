@@ -58,6 +58,18 @@ public sealed class Track
 
     public double GainDb { get; set; }
 
+    /// <summary>
+    /// Audio treatment for everything on this track.
+    ///
+    /// Noise reduction belongs here rather than on a segment: it is a property
+    /// of the microphone and the room, not of the sentence, so setting it forty
+    /// times once per segment is both tedious and a way to end up with forty
+    /// slightly different settings. A segment's own
+    /// <see cref="SpineElement.Effects"/> are for fixing one bad take, and run
+    /// after these.
+    /// </summary>
+    public List<AudioEffect> Effects { get; set; } = [];
+
     public bool IsAudible(bool anyTrackSoloed) => !Muted && (!anyTrackSoloed || Soloed);
 
     /// <summary>

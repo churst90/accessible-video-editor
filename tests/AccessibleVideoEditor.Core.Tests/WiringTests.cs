@@ -110,11 +110,11 @@ public partial class WiringTests
     [Fact]
     public void The_keys_held_for_unbuilt_commands_are_not_claimed_by_anything_else()
     {
-        // Workflows, nudge, move-to-track and export presets are designed and
-        // unbuilt. Their keys were removed from the registry rather than left
-        // pointing at nothing; this pins them so a future command cannot quietly
-        // take one and make the roadmap's reservation false.
-        string[] held = ["Ctrl+Alt+K", "Ctrl+Alt+Shift+K", "Alt+Left", "Alt+Right", "Ctrl+F2"];
+        // Workflows, nudge and move-to-track are designed and unbuilt. Their
+        // keys were removed from the registry rather than left pointing at
+        // nothing; this pins them so a future command cannot quietly take one
+        // and make the roadmap's reservation false.
+        string[] held = ["Ctrl+Alt+K", "Ctrl+Alt+Shift+K", "Alt+Left", "Alt+Right"];
 
         var taken = CommandRegistry.All
             .Where(c => held.Contains(c.DefaultBinding) || held.Contains(c.Alternate))

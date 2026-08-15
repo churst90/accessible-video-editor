@@ -24,6 +24,23 @@ public sealed class Project
     public List<Source> Sources { get; set; } = [];
     public List<Track> Tracks { get; set; } = [];
 
+    /// <summary>
+    /// Named ranges of sources. They live on the project rather than on the
+    /// source so that renaming, re-noting and removing one is an edit of the
+    /// project like any other, and so a source can be re-imported without
+    /// taking its subclips with it.
+    /// </summary>
+    public List<Subclip> Subclips { get; set; } = [];
+
+    /// <summary>
+    /// Runs of consecutive segments treated as one named thing. See
+    /// <see cref="SegmentGroup"/> for why this is a grouping rather than nesting.
+    /// </summary>
+    public List<SegmentGroup> Groups { get; set; } = [];
+
+    /// <summary>Cameras pointed at the same thing, lined up by sound.</summary>
+    public List<MulticamGroup> Multicams { get; set; } = [];
+
     /// <summary>Transitions you made yourself, kept by name.</summary>
     public List<CustomTransition> CustomTransitions { get; set; } = [];
 
@@ -36,6 +53,19 @@ public sealed class Project
     public SpineElement? Element(ElementId id) => Spine.FirstOrDefault(e => e.Id == id);
 
     public Source? SourceOf(SourceId id) => Sources.FirstOrDefault(s => s.Id == id);
+
+    public Subclip? SubclipOf(SubclipId id) => Subclips.FirstOrDefault(s => s.Id == id);
+
+    public SegmentGroup? GroupOf(GroupId id) => Groups.FirstOrDefault(g => g.Id == id);
+
+    public MulticamGroup? MulticamOf(GroupId id) => Multicams.FirstOrDefault(m => m.Id == id);
+
+    /// <summary>The group this element belongs to, if any. An element is in at most one.</summary>
+    public SegmentGroup? GroupContaining(ElementId element) =>
+        Groups.FirstOrDefault(g => g.Members.Contains(element));
+
+    public IEnumerable<Subclip> SubclipsOf(SourceId source) =>
+        Subclips.Where(s => s.Source == source);
 
     public Track? TrackOf(TrackId id) => Tracks.FirstOrDefault(t => t.Id == id);
 

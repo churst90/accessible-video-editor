@@ -2,6 +2,115 @@
 
 Newest first. Dates are when the work landed.
 
+## Everything the audit said was missing
+
+Six features, all of which the previous pass had found either claimed-but-absent
+or listed as a gap. 787 tests, up from 695.
+
+### Subclips
+
+`U` in the bin names the marked range of a source. *"The good intro"* becomes
+something you can insert rather than a pair of numbers you have to find again -
+which without sight means listening through the whole take a second time.
+
+A **reference, not a copy**, so removing one leaves what you already put on the
+timeline alone, and the command says so because it sounds destructive and is
+not. Marks given backwards are read as a range rather than refused; marking past
+the end of a take clamps. A **duplicate name is refused rather than numbered** -
+"good intro" and "good intro 2" are indistinguishable in a list read aloud.
+
+### Compound segments, as a grouping rather than nesting
+
+`Ctrl+Shift+G` names a run of segments; `Ctrl+Alt+G` lists them.
+
+Every other editor makes a compound a container. That would mean programme time
+had to be computed through a tree, and everything that maps time - navigation,
+the transcript, overlay anchors, the render plan, the EDL - would have to learn
+about depth. A `SegmentGroup` records that a run belongs together instead, which
+buys the thing people actually want from a compound, *one object I can move*,
+without moving a single invariant.
+
+It also keeps what nesting takes away: the members stay individually reachable,
+and collapsing only decides whether navigation stops on them. **A group is one
+object when you are moving it and ten segments when you are fixing one.**
+
+Every verb says how many segments it touched, and deleting says how long they
+were - "deleted the intro" does not tell you how much of the video just went. A
+group broken apart by an insert refuses to move rather than carrying the stranger
+along.
+
+### Audio effects
+
+The largest audible gap. A mixer answers "what is happening" by eye; the
+replacement is the one the image editor already proved for colour - **named
+presets plus a spoken number**.
+
+Effects are named for what they are for - *room tone removal*, *rumble filter*,
+*levelling* - never for the filter underneath, with one control each, said in the
+unit an engineer uses. They run in a **fixed order regardless of the order they
+were added**, because a compressor pumping on rumble you were about to remove is
+a mistake you would need the theory to predict.
+
+**Track effects and segment effects are deliberately separate.** Noise reduction
+is a property of the microphone and the room; a segment's own effects are for
+fixing one take. Which one you changed is always said.
+
+`Ctrl+F4` measures and **advises in the words of the commands**, the same loop as
+`Shift+V` in the image editor: *"the noise floor is at -35 decibels, which is
+audible under speech. Suggested: room tone removal at 12 dB."* A worse
+measurement suggests a harder setting. Sound that measures fine is told so
+rather than met with silence.
+
+### Volume over time
+
+`Ctrl+Alt+A`. A curve with draggable points is the least accessible control in
+any editor - but a curve is a picture of a decision, and **the decision has a
+name**. So the model stores the shape: duck, fade up, fade down, ease in, hold
+quieter. A duck goes down and comes back inside its own length, which is what
+music under a voice actually does.
+
+Each reads back as the sentence that made it. Arbitrary point editing is not
+offered, because every use of it that matters for talking-head video is one of
+these shapes.
+
+### Multicam
+
+The recording side already worked; knowing how far apart two files start did not.
+
+Synced **by sound** - envelope cross-correlation over the peak data already
+cached for drawing waveforms, so it costs no extra decoding and survives the two
+cameras having completely different microphones. Two consumer cameras have no
+shared clock, and a clap is something you can do without seeing anything.
+
+**Confidence is kept and spoken.** Two unrelated recordings still produce a best
+shift, and reporting that as a sync is how a whole edit ends up a second out.
+Angles that matched badly are named individually rather than counted, because
+which camera is unreliable decides whether you can use it.
+
+**A digit cuts to that angle** - the same gesture as a digit cutting to a scene
+while streaming, so it is learnt once. The cut splits and re-points, frame
+accurate because the offset is known, and the words stay with the segment because
+a transcript belongs to the take rather than to the camera. Cutting to an unsynced
+angle is refused rather than done wrongly.
+
+### Export presets
+
+`Ctrl+F2`, and the key no longer starts a master render. Named for what they are
+for, and each one **says what it will cost before it runs**: *"the sides are
+cropped, losing about 68 percent of the frame."* A preset changes only the final
+encode, so exporting the same edit twice re-renders the segments once.
+
+### A Windows and Mac client, framed
+
+[CLIENTS.md](CLIENTS.md). GTK stays the Linux client. MAUI is the obvious answer
+and the weakest one - its announcement channel has no priority, and a custom
+timeline means dropping through to WinUI and Catalyst anyway. The recommendation
+is **WPF on Windows first**, whose UIA support is the closest match to what GTK
+gives today, with macOS deferred rather than guessed at.
+
+**Nothing gets built until a scrubber spike has been read by NVDA.** That is the
+lesson Avalonia already charged for.
+
 ## Making the documentation and the application agree
 
 A pass that built nothing new. It checked every claim in the documentation

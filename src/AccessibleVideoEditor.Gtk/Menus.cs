@@ -27,7 +27,8 @@ public static class Menus
             [("file.new", "win.new"), ("file.open", "win.open"), ("file.recent", "win.recent")],
             [("file.save", "win.save"), ("file.saveAs", "win.saveAs")],
             [("file.importMedia", "win.import"), ("file.reloadEdl", "win.reloadEdl")],
-            [("render.draft", "win.renderDraft"), ("render.master", "win.export")],
+            [("render.draft", "win.renderDraft"), ("render.master", "win.export"),
+             ("render.presets", "win.renderPresets")],
             [("file.exit", "win.quit")]));
 
         bar.AppendSubmenu("_Edit", Section(
@@ -41,7 +42,21 @@ public static class Menus
             [("edit.insertHole", "win.insertHole"), ("edit.marker", "win.marker")],
             [("select.segment", "win.selectSegment"), ("select.track", "win.selectTrack"),
              ("select.clear", "win.selectClear")],
+            [("edit.group", "win.group"), ("group.list", "win.groupList")],
             [("edit.snap", "win.snap"), ("edit.rippleMode", "win.rippleMode")]));
+
+        bar.AppendSubmenu("_Media", Section(
+            [("file.importMedia", "win.import")],
+            [("subclip.create", "win.subclipCreate"), ("subclip.list", "win.subclipList")],
+            [("multicam.create", "win.multicamCreate"), ("multicam.sync", "win.multicamSync"),
+             ("multicam.switch", "win.multicamSwitch")],
+            [("edit.insert", "win.insert"), ("edit.overwrite", "win.overwrite")]));
+
+        bar.AppendSubmenu("_Sound", Section(
+            [("audio.effects", "win.audioEffects"), ("audio.advise", "win.audioAdvise")],
+            [("audio.automation", "win.audioAutomation")],
+            [("track.volume", "win.trackVolume"), ("edit.detachAudio", "win.detachAudio")],
+            [("edit.mute", "win.mute")]));
 
         bar.AppendSubmenu("_Clean_up", Section(
             [("cleanup.fillers", "win.removeFillers"), ("cleanup.silences", "win.removeSilences")],

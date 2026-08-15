@@ -67,7 +67,10 @@ public static class SegmentFilters
         }
 
         var video = VideoChain(element, placed, width, height, settings.Fps, still);
-        var audio = AudioChain(element, placed);
+
+        // The programme track's effects apply to the spine; anything on another
+        // track is an overlay item and is treated where those are mixed.
+        var audio = AudioChain(element, placed, project.ProgrammeTrack.Effects);
 
         arguments.AddRange(["-vf", video, "-af", audio]);
 
@@ -223,9 +226,25 @@ public static class SegmentFilters
     /// instance, so extreme retimes are chained rather than clamped - clamping
     /// would silently desynchronise the sound from the picture.
     /// </summary>
-    public static string AudioChain(SpineElement element, PlacedElement placed)
+    public static string AudioChain(
+        SpineElement element,
+        PlacedElement placed,
+        IReadOnlyList<AudioEffect>? trackEffects = null)
     {
         var steps = new List<string> { "aresample=48000", "aformat=channel_layouts=stereo" };
+
+        // Track effects first, then the segment's own. The microphone is fixed
+        // before the take is: correcting one sentence against uncorrected room
+        // tone would mean re-doing it once the track was treated.
+        if (trackEffects is { Count: > 0 } && AudioEffectFilters.Build(trackEffects) is { Length: > 0 } onTrack)
+        {
+            steps.Add(onTrack);
+        }
+
+        if (element.Effects.Count > 0 && AudioEffectFilters.Build(element.Effects) is { Length: > 0 } onSegment)
+        {
+            steps.Add(onSegment);
+        }
 
         if (Math.Abs(element.Speed - 1.0) > 0.001 && element.Speed > 0)
         {
@@ -244,6 +263,13 @@ public static class SegmentFilters
             }
 
             steps.Add($"atempo={Number(remaining)}");
+        }
+
+        // Automation before the mute, so muting a segment that ducks still
+        // silences it rather than the two fighting.
+        if (AutomationFilters.Volume(element.Automation, placed.Duration) is { Length: > 0 } automated)
+        {
+            steps.Add(automated);
         }
 
         if (element.Muted) steps.Add("volume=0");
