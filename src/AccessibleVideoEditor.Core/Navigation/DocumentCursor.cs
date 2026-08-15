@@ -24,10 +24,6 @@ public sealed class DocumentCursor
     /// <summary>
     /// What the last deliberate move was about, so a destructive key can act on
     /// what you were just working with rather than making you say it twice.
-    ///
-    /// Marking in and out means you mean the range; stepping segment to segment
-    /// means you mean the segment. Delete asking "which did you mean?" every
-    /// time would be safer and unusable.
     /// </summary>
     public EditIntent Intent { get; private set; } = EditIntent.Segment;
 

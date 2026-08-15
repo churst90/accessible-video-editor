@@ -1,18 +1,9 @@
 namespace AccessibleVideoEditor.Vision;
 
 /// <summary>
-/// Finds a face in a frame, well enough to say where it is.
-///
-/// This is face <b>detection</b>, not recognition: it says "there is a face
-/// there", never "that is Cody". Recognition needs a trained model and a
-/// dependency this application does not want; framing needs only a position,
-/// and a position is something arithmetic can find.
-///
-/// The test is on chrominance rather than on red-green-blue directly. Skin
-/// occupies a narrow, well-known band of Cb and Cr almost regardless of how
-/// dark or light the person is, whereas the usual RGB rules are tuned on pale
-/// skin and quietly fail on everyone else. Brightness is deliberately ignored
-/// for the same reason.
+/// Finds a face well enough to say where it is. Detection, not recognition: it
+/// never says who. The test is on chrominance rather than red-green-blue,
+/// because the usual RGB rules are tuned on pale skin and fail on everyone else.
 /// </summary>
 public static class FaceFinder
 {

@@ -4,11 +4,6 @@ namespace AccessibleVideoEditor.Core.Images;
 /// Answering, from the numbers, the questions a sighted person answers with a
 /// glance: where is the picture in this scan, is it straight, and how much of
 /// what I am looking at is empty paper.
-///
-/// This is the part of image editing that decides whether the rest is usable.
-/// Cropping and straightening are easy once you know <i>what</i> to crop and
-/// <i>by how much</i> to straighten; the whole difficulty is that those two
-/// facts normally arrive through the eyes.
 /// </summary>
 public static class ImageAnalysis
 {

@@ -27,8 +27,6 @@ public sealed class WaveformExtractor(string directory, string ffmpegPath = "ffm
     public string Directory { get; } = directory;
 
     private readonly Dictionary<SourceId, WaveformData> _memory = [];
-
-    /// <summary>What is already available to draw, without waiting for anything.</summary>
     public WaveformData? Peek(SourceId source) =>
         _memory.TryGetValue(source, out var data) ? data : null;
 

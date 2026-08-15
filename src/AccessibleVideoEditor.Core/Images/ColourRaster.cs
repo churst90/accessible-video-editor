@@ -13,8 +13,6 @@ public sealed class ColourRaster(int width, int height, byte[] pixels)
     public int Width { get; } = width;
 
     public int Height { get; } = height;
-
-    /// <summary>Three bytes per pixel, red green blue, row major.</summary>
     public byte[] Pixels { get; } = pixels;
 
     public (byte R, byte G, byte B) At(int x, int y)
@@ -86,6 +84,26 @@ public sealed class ColourRaster(int width, int height, byte[] pixels)
     }
 
     public int Count => Pixels.Length / 3;
+
+    /// <summary>
+    /// The same picture in grey, so brightness questions need no second decode.
+    /// </summary>
+    public Raster ToGrey()
+    {
+        var grey = new byte[Width * Height];
+
+        for (var i = 0; i < grey.Length; i++)
+        {
+            var at = i * 3;
+
+            grey[i] = (byte)Math.Clamp(
+                0.299 * Pixels[at] + 0.587 * Pixels[at + 1] + 0.114 * Pixels[at + 2],
+                0,
+                255);
+        }
+
+        return new Raster(Width, Height, grey);
+    }
 
     /// <summary>
     /// The average colour of a small patch. Used when a point is named as

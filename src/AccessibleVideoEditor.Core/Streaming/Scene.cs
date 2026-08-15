@@ -48,10 +48,6 @@ public sealed class Scene
 /// <summary>
 /// One source as it appears in one scene: which source, where it sits, whether
 /// it is showing and how loud it is here.
-///
-/// The properties live on the reference rather than on the source so the same
-/// camera can be full frame in one scene and a corner inset in another without
-/// being two cameras.
 /// </summary>
 public sealed class SourceRef
 {

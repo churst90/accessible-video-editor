@@ -4,18 +4,11 @@ using System.Globalization;
 namespace AccessibleVideoEditor.Vision;
 
 /// <summary>
-/// A camera, running, handing over every frame as it arrives.
+/// A camera, running, handing over every frame. One long-lived ffmpeg rather
+/// than stills per tick: opening a camera takes the best part of a second, so
+/// stills would answer after you had already moved.
 ///
-/// One long-lived ffmpeg rather than a still grabbed per tick: opening a camera
-/// takes the best part of a second, so grabbing stills would give a viewfinder
-/// that answers a second after you moved - which is worse than no viewfinder,
-/// because you would correct against stale information.
-///
-/// The frames are tiny on purpose. Everything asked of them is "where is the
-/// face", and a 160-pixel-wide frame answers that in well under a millisecond.
-///
-/// <b>The camera is only ever opened by an explicit request.</b> Nothing in this
-/// class runs on a timer, at startup, or as a side effect of arming a track.
+/// <b>Only ever opened by an explicit request.</b>
 /// </summary>
 public sealed class ViewfinderCamera(string ffmpegPath = "ffmpeg") : IDisposable
 {

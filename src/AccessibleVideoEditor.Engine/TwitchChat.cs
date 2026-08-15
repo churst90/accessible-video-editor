@@ -11,11 +11,6 @@ namespace AccessibleVideoEditor.Engine;
 /// That matters here: it means chat works the first time the view is opened,
 /// with nothing to register and no key to store. An account is only needed to
 /// send or to moderate.
-///
-/// Twitch is the first platform for exactly this reason. YouTube and Facebook
-/// both require an OAuth application before a single message can be read, so
-/// they are behind the same interface and say plainly what they are waiting
-/// for rather than failing silently.
 /// </summary>
 public sealed class TwitchChatClient : IChatClient
 {

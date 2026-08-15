@@ -1,4 +1,6 @@
 using AccessibleVideoEditor.Core;
+using AccessibleVideoEditor.Core.Commands;
+using AccessibleVideoEditor.Core.Edl;
 using AccessibleVideoEditor.Core.Editing;
 using AccessibleVideoEditor.Core.Model;
 using AccessibleVideoEditor.Core.Navigation;
@@ -21,13 +23,8 @@ namespace AccessibleVideoEditor.Gtk;
 /// Four panes, in the direction work flows: media comes in, becomes tracks,
 /// becomes a timeline, reads out as a transcript. Tab moves rightwards through
 /// that pipeline, Shift+Tab back.
-///
-/// Every pane is a native GtkListBox or GtkTextView, so Orca gets a real
-/// accessibility tree rather than one the application had to construct. Within
-/// a pane, navigation is the widget's own - Up and Down move between rows
-/// because that is what a list does.
 /// </summary>
-public sealed class MainWindow
+public sealed partial class MainWindow
 {
     private readonly Gtk_.ApplicationWindow _window;
     private readonly Workspace _workspace = new();
@@ -208,6 +205,18 @@ public sealed class MainWindow
         // Chats that are already configured connect themselves, so opening the
         // view is enough and nothing has to be set up twice.
         _stream.ConnectConfiguredChats();
+
+        if (_settings.Behaviour.AutosaveMinutes > 0)
+        {
+            GLib.Functions.TimeoutAdd(
+                GLib.Constants.PRIORITY_DEFAULT_IDLE,
+                (uint)(_settings.Behaviour.AutosaveMinutes * 60_000),
+                () =>
+                {
+                    _ = Autosave();
+                    return true;
+                });
+        }
     }
 
     private void AddView(Pane pane, Gtk_.Widget content) =>
@@ -279,7 +288,6 @@ public sealed class MainWindow
         entry.GrabFocus();
     }
 
-
     /// <summary>
     /// A view that is not built yet. Top-aligned rather than centred: a label
     /// floating in the middle of an empty frame reads as a rendering fault.
@@ -303,7 +311,7 @@ public sealed class MainWindow
 
     private Project Project => _session.Project;
 
-    // ---- panes -----------------------------------------------------------
+    // ---- panes -------------------------------------------------------------
 
     private Gtk_.Widget BuildMediaBin()
     {
@@ -351,10 +359,6 @@ public sealed class MainWindow
     /// <summary>
     /// Track headers on the left, drawn lanes on the right - the layout every
     /// editor uses, and the one a sighted collaborator will already know.
-    ///
-    /// The headers are a real GtkListBox and they are still what you move
-    /// through and what Orca reads. The drawing beside them is a picture of the
-    /// same model, takes no focus, and can be ignored entirely.
     /// </summary>
     private Gtk_.Widget BuildTimeline()
     {
@@ -620,7 +624,7 @@ public sealed class MainWindow
         widget.MarginEnd = 10;
     }
 
-    // ---- focus -----------------------------------------------------------
+    // ---- focus -------------------------------------------------------------
 
     private void FocusPane(Pane pane, bool silent = false)
     {
@@ -681,7 +685,7 @@ public sealed class MainWindow
         _cursor.FocusedTrack = _trackRows[index].Track;
     }
 
-    // ---- keys ------------------------------------------------------------
+    // ---- keys --------------------------------------------------------------
 
     private bool OnWindowKeyPressed(Gtk_.EventControllerKey sender, Gtk_.EventControllerKey.KeyPressedSignalArgs args)
     {
@@ -830,7 +834,6 @@ public sealed class MainWindow
         return controller;
     }
 
-
     /// <summary>
     /// The streamer view.
     ///
@@ -909,7 +912,7 @@ public sealed class MainWindow
                 Prompt("Open a picture", string.Empty, "Open", path => _images.Open(path));
                 return true;
 
-            // ---- size ----------------------------------------------------
+            // ---- size --------------------------------------------------------------
 
             case Gdk.Constants.KEY_Right when shift:
                 _images.NudgeEdge(CropEdge.Right, -step);
@@ -951,7 +954,7 @@ public sealed class MainWindow
                 ChooseSizePreset();
                 return true;
 
-            // ---- crop ----------------------------------------------------
+            // ---- crop --------------------------------------------------------------
 
             case Gdk.Constants.KEY_c or Gdk.Constants.KEY_C when shift:
                 ChooseCropRatio();
@@ -965,7 +968,7 @@ public sealed class MainWindow
                 _images.Apply("resetting the crop", ImageEdits.ResetCrop);
                 return true;
 
-            // ---- straightening -------------------------------------------
+            // ---- straightening -----------------------------------------------------
 
             case Gdk.Constants.KEY_f or Gdk.Constants.KEY_F when shift:
                 _images.Apply("fixing the scan", ImageEdits.FixScan);
@@ -983,7 +986,7 @@ public sealed class MainWindow
                 _images.Apply("turning left", document => ImageEdits.Rotate(document, -1));
                 return true;
 
-            // ---- drawing --------------------------------------------------
+            // ---- drawing -----------------------------------------------------------
 
             case Gdk.Constants.KEY_d or Gdk.Constants.KEY_D when shift:
                 Prompt("Draw", string.Empty, "Draw", sentence => _images.AddShape(sentence));
@@ -997,7 +1000,7 @@ public sealed class MainWindow
                 _images.DescribeColours();
                 return true;
 
-            // ---- looking at it --------------------------------------------
+            // ---- looking at it -----------------------------------------------------
 
             case Gdk.Constants.KEY_F8:
                 _images.Describe();
@@ -1011,7 +1014,7 @@ public sealed class MainWindow
                 _images.ToggleSweep();
                 return true;
 
-            // ---- colour ---------------------------------------------------
+            // ---- colour ------------------------------------------------------------
 
             case Gdk.Constants.KEY_v or Gdk.Constants.KEY_V when shift:
                 _images.AdviseColour();
@@ -1058,7 +1061,7 @@ public sealed class MainWindow
                 SampleAPoint();
                 return true;
 
-            // ---- out ------------------------------------------------------
+            // ---- out ---------------------------------------------------------------
 
             case Gdk.Constants.KEY_e or Gdk.Constants.KEY_E:
                 Prompt("Save as", SuggestedImageName(), "Save", path => _images.Export(path));
@@ -1388,7 +1391,7 @@ public sealed class MainWindow
                 _stream.Preflight();
                 return true;
 
-            // ---- chat, and what may be done to it ------------------------
+            // ---- chat, and what may be done to it ----------------------------------
 
             case Gdk.Constants.KEY_y or Gdk.Constants.KEY_Y:
                 Prompt("YouTube live video id", _settings.Streaming.YouTubeVideoId, "Connect",
@@ -1422,7 +1425,7 @@ public sealed class MainWindow
                 _stream.DescribeSecrets();
                 return true;
 
-            // ---- music ---------------------------------------------------
+            // ---- music -------------------------------------------------------------
 
             case Gdk.Constants.KEY_space when shift:
                 _stream.StopMusic();
@@ -1448,7 +1451,7 @@ public sealed class MainWindow
                 Prompt("Music file", string.Empty, "Add", path => _stream.AddMusic(path));
                 return true;
 
-            // ---- how it is going -----------------------------------------
+            // ---- how it is going ---------------------------------------------------
 
             case Gdk.Constants.KEY_h or Gdk.Constants.KEY_H:
                 _stream.ReportHealth();
@@ -1547,6 +1550,38 @@ public sealed class MainWindow
             // The boundary under the cursor: what it is, how long, and what it
             // sounds like. A transition is a navigable object here, so editing
             // one is a key rather than a dialog to go and find.
+            case Gdk.Constants.KEY_m or Gdk.Constants.KEY_M when control:
+                Run("markerList");
+                return true;
+
+            case Gdk.Constants.KEY_m or Gdk.Constants.KEY_M when shift:
+                Run("removeMarker");
+                return true;
+
+            case Gdk.Constants.KEY_m or Gdk.Constants.KEY_M when !control && !shift:
+                Run("marker");
+                return true;
+
+            case Gdk.Constants.KEY_l or Gdk.Constants.KEY_L when control && shift:
+                Run("title");
+                return true;
+
+            case Gdk.Constants.KEY_g or Gdk.Constants.KEY_G when control && !shift:
+                Run("graphic");
+                return true;
+
+            case Gdk.Constants.KEY_b or Gdk.Constants.KEY_B when control:
+                Run("broll");
+                return true;
+
+            case Gdk.Constants.KEY_d or Gdk.Constants.KEY_D when control && alt:
+                Run("describeEdit");
+                return true;
+
+            case Gdk.Constants.KEY_f or Gdk.Constants.KEY_F when control:
+                Run("find");
+                return true;
+
             case Gdk.Constants.KEY_x or Gdk.Constants.KEY_X when !control && !shift:
                 ChooseTransition();
                 return true;
@@ -1752,10 +1787,6 @@ public sealed class MainWindow
     /// Plain letters are safe here because nothing in the Tracks pane is a text
     /// field - which is exactly why track controls live in their own pane.
     /// </summary>
-    /// <summary>
-    /// Comma inserts and full stop overwrites, as in Premiere. Plain letters are
-    /// safe here because nothing in the media bin is a text field.
-    /// </summary>
     private bool OnMediaKey(Gtk_.EventControllerKey.KeyPressedSignalArgs args)
     {
         switch (args.Keyval)
@@ -1813,7 +1844,7 @@ public sealed class MainWindow
         }
     }
 
-    // ---- actions ---------------------------------------------------------
+    // ---- actions -----------------------------------------------------------
 
     private void RegisterActions()
     {
@@ -1938,15 +1969,7 @@ public sealed class MainWindow
         RegisterImageActions();
         RegisterTransitionActions();
         RegisterFileActions();
-
-        // Not built yet. Each says what it will do and roughly when, rather than
-        // a bare "not wired" - so an unbuilt command is still informative.
-        foreach (var (pending, note) in NotYetBuilt)
-        {
-            var name = pending;
-            var message = note;
-            Action(name, () => Announce(message, urgent: true));
-        }
+        RegisterReviewActions();
     }
 
     /// <summary>
@@ -2012,477 +2035,6 @@ public sealed class MainWindow
         Action("keyTwitch", () => AskForKey(StreamPlatform.Twitch));
         Action("keyYouTube", () => AskForKey(StreamPlatform.YouTube));
         Action("keyFacebook", () => AskForKey(StreamPlatform.Facebook));
-    }
-
-    /// <summary>
-    /// New, open, save. Everything here guards unsaved work, because losing an
-    /// afternoon's edit is the one failure no amount of announcing makes up for.
-    /// </summary>
-    private void RegisterFileActions()
-    {
-        Action("new", NewProject);
-        Action("open", OpenProject);
-        Action("save", () => _ = SaveProject(saveAs: false));
-        Action("saveAs", () => _ = SaveProject(saveAs: true));
-        Action("recent", OpenRecent);
-    }
-
-    private void NewProject() => WithUnsavedWork(() =>
-        Prompt("Name for the new project", "Untitled", "Create", name =>
-        {
-            LoadInto(Project.CreateDefault(name));
-
-            _dirty = true;
-            Announce($"{name}. Nothing is on disk until you save it with Control S", urgent: true);
-        }));
-
-    private void OpenProject() => WithUnsavedWork(() =>
-        Prompt("Project folder", LastFolder(), "Open", async path =>
-        {
-            if (!File.Exists(System.IO.Path.Combine(path, "project.json")))
-            {
-                Announce("there is no project in that folder", urgent: true);
-                return;
-            }
-
-            try
-            {
-                var project = await ProjectJson.LoadAsync(path).ConfigureAwait(true);
-
-                LoadInto(project);
-                Remember(path);
-
-                _dirty = false;
-
-                Announce(
-                    $"{project.Name}. {project.Spine.Count} segments, "
-                    + $"{Timecode.Speak(_session.Map.Duration)}", urgent: true);
-            }
-            catch (Exception exception)
-            {
-                Announce($"could not open it: {exception.Message}", urgent: true);
-            }
-        }));
-
-    /// <summary>
-    /// Saves in place when the project has a home, and asks where when it does
-    /// not. Silent success is deliberate elsewhere in this application; not
-    /// here - a save you did not hear is a save you will not trust.
-    /// </summary>
-    private async Task SaveProject(bool saveAs)
-    {
-        if (!saveAs && Project.RootPath is { Length: > 0 } existing)
-        {
-            await WriteTo(existing).ConfigureAwait(true);
-            return;
-        }
-
-        Prompt(
-            "Folder to save the project in",
-            Project.RootPath ?? System.IO.Path.Combine(LastFolder(), Sanitise(Project.Name)),
-            "Save",
-            path => _ = WriteTo(path));
-    }
-
-    private async Task WriteTo(string path)
-    {
-        try
-        {
-            await ProjectJson.SaveAsync(Project, path).ConfigureAwait(true);
-
-            Remember(path);
-
-            _dirty = false;
-            _window.Title = $"{Project.Name} - {AboutInfo.Name}";
-
-            Announce($"saved to {System.IO.Path.GetFileName(path)}", urgent: true);
-        }
-        catch (Exception exception)
-        {
-            Announce($"could not save: {exception.Message}", urgent: true);
-        }
-    }
-
-    private void OpenRecent()
-    {
-        var recent = _settings.Recent.Where(Directory.Exists).ToList();
-
-        if (recent.Count == 0)
-        {
-            Announce("nothing recent yet", urgent: true);
-            return;
-        }
-
-        var menu = Gio.Menu.New();
-
-        foreach (var path in recent)
-        {
-            menu.Append(System.IO.Path.GetFileName(path), $"win.openRecent::{path}");
-        }
-
-        PopUp(menu, $"{recent.Count} recent");
-    }
-
-    /// <summary>
-    /// Replaces everything the window is showing. The session is rebuilt rather
-    /// than mutated so undo cannot reach back into a project you have closed.
-    /// </summary>
-    private void LoadInto(Project project)
-    {
-        _session = new EditSession(project);
-        _cursor.FocusedTrack = project.ProgrammeTrack.Id;
-        _cursor.MoveTo(0);
-        _cursor.ClearSelection();
-        _viewStart = 0;
-
-        _window.Title = $"{project.Name} - {AboutInfo.Name}";
-
-        RebuildTrackRows();
-        RebuildMediaRows();
-        Refresh();
-    }
-
-    /// <summary>
-    /// Asks before throwing work away, and only when there is work to throw.
-    /// No is focused, because it is the answer you get by pressing Enter
-    /// without having listened.
-    /// </summary>
-    private void WithUnsavedWork(System.Action then)
-    {
-        if (!_dirty)
-        {
-            then();
-            return;
-        }
-
-        ConfirmThen($"{Project.Name} has unsaved changes. Discard them?", then);
-    }
-
-    private void Remember(string path)
-    {
-        _settings.Recent.Remove(path);
-        _settings.Recent.Insert(0, path);
-
-        while (_settings.Recent.Count > 10) _settings.Recent.RemoveAt(_settings.Recent.Count - 1);
-
-        _settings.Save();
-    }
-
-    private string LastFolder() =>
-        _settings.Recent.FirstOrDefault() is { Length: > 0 } recent
-            ? System.IO.Path.GetDirectoryName(recent) ?? recent
-            : Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-
-    private static string Sanitise(string name) =>
-        string.Concat(name.Select(c => System.IO.Path.GetInvalidFileNameChars().Contains(c) ? '-' : c));
-
-    /// <summary>
-    /// Transitions, track levels, and the handful of commands that were in the
-    /// core with no way to reach them.
-    /// </summary>
-    private void RegisterTransitionActions()
-    {
-        Action("setTransition", ChooseTransition);
-        Action("auditionTransition", AuditionTransition);
-        Action("transitionSound", ChooseTransitionSound);
-        Action("saveTransition", SaveCustomTransition);
-        Action("customTransition", ChooseCustomTransition);
-
-        Action("trackVolume", SetTrackVolume);
-
-        Action("speed", SetSpeed);
-        Action("insertHole", InsertHole);
-        Action("verbosity", CycleVerbosity);
-
-        Action("removeTrack", () =>
-        {
-            if (Project.TrackOf(_cursor.FocusedTrack ?? default) is not { } track) return;
-
-            ConfirmThen(
-                $"Delete {track.Name} and everything on it?",
-                () => Apply("delete track", p => EditOperations.RemoveTrack(p, track.Id)));
-        });
-
-        ParameterisedAction("pickTransition", name => ApplyTransition(name));
-        ParameterisedAction("pickTransitionLength", name =>
-        {
-            if (double.TryParse(name, out var seconds)) SetTransitionLength(seconds);
-        });
-        ParameterisedAction("pickCustomTransition", name => UseCustomTransition(name));
-
-        ParameterisedAction("openRecent", path =>
-        {
-            if (path.Length == 0) return;
-
-            WithUnsavedWork(async () =>
-            {
-                try
-                {
-                    LoadInto(await ProjectJson.LoadAsync(path).ConfigureAwait(true));
-                    Remember(path);
-
-                    _dirty = false;
-                    Announce($"{Project.Name}", urgent: true);
-                }
-                catch (Exception exception)
-                {
-                    Announce($"could not open it: {exception.Message}", urgent: true);
-                }
-            });
-        });
-    }
-
-    /// <summary>
-    /// The transition entering the segment under the cursor. Type first,
-    /// because that is the decision; the length follows and has its own menu.
-    /// </summary>
-    private void ChooseTransition()
-    {
-        var menu = Gio.Menu.New();
-
-        var common = Gio.Menu.New();
-        foreach (var (name, _) in TransitionLibrary.Common)
-        {
-            common.Append(TitleCase(name), $"win.pickTransition::{name}");
-        }
-
-        menu.AppendSection(null, common);
-
-        var more = Gio.Menu.New();
-        foreach (var name in TransitionLibrary.More)
-        {
-            more.Append(name, $"win.pickTransition::{name}");
-        }
-
-        menu.AppendSubmenu("More", more);
-
-        var lengths = Gio.Menu.New();
-        foreach (var seconds in TransitionLibrary.Lengths)
-        {
-            lengths.Append(
-                TransitionLibrary.DescribeLength(seconds),
-                $"win.pickTransitionLength::{seconds.ToString(System.Globalization.CultureInfo.InvariantCulture)}");
-        }
-
-        menu.AppendSubmenu("Length", lengths);
-
-        var extras = Gio.Menu.New();
-        extras.Append("Sound On This Transition", "win.transitionSound");
-        extras.Append("Audition It", "win.auditionTransition");
-        extras.Append("Save As My Own", "win.saveTransition");
-        extras.Append("Use One Of Mine", "win.customTransition");
-        menu.AppendSection(null, extras);
-
-        PopUp(menu, $"transition menu. {DescribeTransitionHere()}");
-    }
-
-    private Transition? TransitionHere()
-    {
-        var placed = _session.Map.Locate(_cursor.ProgrammeTime);
-
-        return placed?.Element.TransitionIn;
-    }
-
-    private string DescribeTransitionHere() =>
-        TransitionHere() is { } transition
-            ? $"currently {transition.Describe()}"
-            : "currently the project default";
-
-    private void ApplyTransition(string name)
-    {
-        if (name.Length == 0) return;
-
-        var existing = TransitionHere();
-
-        var match = TransitionLibrary.Common.FirstOrDefault(t => t.Name == name);
-
-        var transition = existing?.Copy() ?? new Transition();
-
-        if (match.Name is not null)
-        {
-            transition.Type = match.Type;
-            transition.CustomType = null;
-            transition.Expression = null;
-        }
-        else
-        {
-            transition.Type = TransitionType.Custom;
-            transition.CustomType = name;
-            transition.Expression = null;
-        }
-
-        if (transition.Type == TransitionType.Cut) transition.Duration = 0;
-        else if (transition.Duration <= 0) transition.Duration = 0.4;
-
-        Apply("set transition", p => EditOperations.SetTransition(p, _cursor.ProgrammeTime, transition));
-    }
-
-    private void SetTransitionLength(double seconds)
-    {
-        var transition = TransitionHere()?.Copy() ?? new Transition();
-
-        transition.Duration = seconds;
-
-        if (transition.Type == TransitionType.Cut && seconds > 0) transition.Type = TransitionType.Fade;
-
-        Apply(
-            "transition length",
-            p => EditOperations.SetTransition(p, _cursor.ProgrammeTime, transition));
-
-        Announce(TransitionLibrary.DescribeLength(seconds), urgent: true);
-    }
-
-    /// <summary>
-    /// A sound under the cut. It belongs to the boundary, so moving the cut
-    /// moves the sound with it.
-    /// </summary>
-    private void ChooseTransitionSound() =>
-        Prompt("Sound file for this transition", string.Empty, "Use", path =>
-        {
-            var transition = TransitionHere()?.Copy() ?? new Transition();
-
-            transition.SoundPath = path;
-
-            Apply(
-                "transition sound",
-                p => EditOperations.SetTransition(p, _cursor.ProgrammeTime, transition));
-
-            Announce(
-                "the programme is not ducked under it; set the track levels yourself with Shift+G",
-                urgent: true);
-        });
-
-    /// <summary>Plays across the boundary, so the transition can be heard rather than imagined.</summary>
-    private void AuditionTransition()
-    {
-        if (TransitionHere() is not { } transition)
-        {
-            Announce("there is no transition here", urgent: true);
-            return;
-        }
-
-        var length = Math.Max(0.4, transition.Duration);
-        var from = Math.Max(0, _cursor.ProgrammeTime - length);
-
-        if (!_player.IsAvailable || !EnsureLoaded()) return;
-
-        Announce($"auditioning {transition.Describe()}", urgent: true);
-
-        _ = _player.PlayRangeAsync(from, Math.Min(_session.Map.Duration, _cursor.ProgrammeTime + length));
-    }
-
-    private void SaveCustomTransition() =>
-        Prompt("Name for this transition", string.Empty, "Save", name =>
-        {
-            var here = TransitionHere();
-
-            Prompt(
-                "xfade name, or an expression",
-                here?.Expression ?? here?.FfmpegName ?? "fade",
-                "Save",
-                definition =>
-                {
-                    var custom = new CustomTransition
-                    {
-                        Name = name,
-                        Definition = definition,
-                        IsExpression = definition.Contains('(') || definition.Contains("PROGRESS"),
-                        Duration = here?.Duration ?? 0.4,
-                        SoundPath = here?.SoundPath,
-                    };
-
-                    Project.CustomTransitions.RemoveAll(t => t.Name == name);
-                    Project.CustomTransitions.Add(custom);
-
-                    Announce($"saved {custom.Describe()}", urgent: true);
-                });
-        });
-
-    private void ChooseCustomTransition()
-    {
-        if (Project.CustomTransitions.Count == 0)
-        {
-            Announce("you have not saved any yet; set one up and choose save as my own", urgent: true);
-            return;
-        }
-
-        var menu = Gio.Menu.New();
-
-        foreach (var custom in Project.CustomTransitions)
-        {
-            menu.Append(custom.Name, $"win.pickCustomTransition::{custom.Name}");
-        }
-
-        PopUp(menu, $"{Project.CustomTransitions.Count} of your own");
-    }
-
-    private void UseCustomTransition(string name)
-    {
-        if (Project.CustomTransitions.FirstOrDefault(t => t.Name == name) is not { } custom) return;
-
-        Apply(
-            "custom transition",
-            p => EditOperations.SetTransition(p, _cursor.ProgrammeTime, custom.ToTransition()));
-    }
-
-    /// <summary>
-    /// The level of one track. There is no automatic ducking anywhere in this
-    /// application, so this is how a music bed is put under a voice - by
-    /// deciding it.
-    /// </summary>
-    private void SetTrackVolume()
-    {
-        if (Project.TrackOf(_cursor.FocusedTrack ?? default) is not { } track) return;
-
-        Prompt(
-            $"{track.Name} level in dB",
-            track.GainDb.ToString("0.#", System.Globalization.CultureInfo.InvariantCulture),
-            "Set",
-            text =>
-            {
-                if (!double.TryParse(text, out var db))
-                {
-                    Announce("say a number of decibels, like minus 12", urgent: true);
-                    return;
-                }
-
-                track.GainDb = Math.Clamp(db, -60, 12);
-
-                RebuildTrackRows();
-                Announce($"{track.Name} at {track.GainDb:0.#} dB", urgent: true);
-            });
-    }
-
-    private void SetSpeed() =>
-        Prompt("Speed, where 1 is normal", "1", "Set", text =>
-        {
-            if (!double.TryParse(text, out var speed) || speed <= 0)
-            {
-                Announce("say a number, like 0.5 for half speed", urgent: true);
-                return;
-            }
-
-            Apply("speed", p => EditOperations.SetSpeed(p, _cursor.ProgrammeTime, speed));
-        });
-
-    private void InsertHole() =>
-        Prompt("What is missing here", string.Empty, "Insert", note =>
-            Apply("insert hole", p => EditOperations.InsertHole(p, _cursor.ProgrammeTime, 2, note)));
-
-    private void CycleVerbosity()
-    {
-        Project.Settings.Verbosity = Project.Settings.Verbosity switch
-        {
-            Verbosity.Terse => Verbosity.Normal,
-            Verbosity.Normal => Verbosity.Verbose,
-            _ => Verbosity.Terse,
-        };
-
-        _settings.Behaviour.Verbosity = Project.Settings.Verbosity;
-        _settings.Save();
-
-        Refresh();
-        Announce($"{Project.Settings.Verbosity.ToString().ToLowerInvariant()} speech", urgent: true);
     }
 
     /// <summary>
@@ -2659,20 +2211,6 @@ public sealed class MainWindow
     private void AskForKey(StreamPlatform platform) =>
         Prompt($"{platform} stream key", string.Empty, "Set", key => _stream.AddTarget(platform, key));
 
-    private static readonly (string Name, string Note)[] NotYetBuilt =
-    [
-        ("reloadEdl", "reloading edit dot m d is not built yet"),
-        ("marker", "markers are not built yet"),
-        ("palette", "the command palette is not built yet"),
-        ("describeEdit", "read me the edit is not built yet, phase 9"),
-        ("issues", "the to-do list is not built yet"),
-        ("find", "find in transcript is not built yet"),
-        ("title", "adding a lower third is not built yet; insert a card and edit it with Control E"),
-        ("graphic", "adding an image is not built yet"),
-        ("broll", "adding b-roll is not built yet"),
-    ];
-
-
     private void Action(string name, System.Action handler)
     {
         _commands[name] = handler;
@@ -2740,11 +2278,6 @@ public sealed class MainWindow
     /// from the track's medium: a video track offers cameras, an audio track
     /// microphones, an image track nothing. That is what removed the need for a
     /// separate record view - the input is a property of the track.
-    /// </summary>
-    /// <summary>
-    /// Video, audio or image. The type is what decides which inputs the track
-    /// can record from, so it is asked for when a track is made and changeable
-    /// afterwards.
     /// </summary>
     private void ChangeTrackType()
     {
@@ -3060,11 +2593,6 @@ public sealed class MainWindow
     /// channel - so it is something you enter and leave rather than a place you
     /// can Tab into and get stuck.
     /// </summary>
-    /// <summary>
-    /// Opens the camera and guides framing by ear. Explicit, always - a camera
-    /// never comes on as a side effect of anything else, and it says so before
-    /// it does.
-    /// </summary>
     private void EnterViewfinder()
     {
         if (_viewfinder is { IsOpen: true })
@@ -3105,12 +2633,6 @@ public sealed class MainWindow
     /// Record, or stop recording. The signal check runs here rather than at arm
     /// time, because it opens the device - and a camera should never come on
     /// because a key was pressed for some other reason.
-    /// </summary>
-    /// <summary>
-    /// Records <b>every armed track at once</b>, each to its own file. That is
-    /// what makes a multi-camera shoot possible: arm two video tracks with
-    /// different cameras, press record once, and get two angles that started
-    /// together.
     /// </summary>
     private void ToggleRecording()
     {
@@ -3353,21 +2875,6 @@ public sealed class MainWindow
     /// The audible VU meter. A visual meter is glanceable; the equivalent by ear
     /// is a tick whose pitch rises with the level, with the zone name spoken
     /// only as it changes - a meter that talks constantly is one you turn off.
-    ///
-    /// A mode, like the viewfinder: it opens the microphone, so it runs only
-    /// while you have asked for it.
-    /// </summary>
-    /// <summary>Opens the card under the cursor in its editor.</summary>
-    /// <summary>
-    /// Brings a file into the project and <b>reports what it got</b> -
-    /// resolution, frame rate, length, and how many audio tracks and what they
-    /// are. Importing silently is fine when a thumbnail appears; here the
-    /// report is the only chance to notice you grabbed the wrong take.
-    /// </summary>
-    /// <summary>
-    /// Puts the source selected in the media bin onto the timeline. Insert
-    /// ripples everything after it; overwrite replaces what is there and leaves
-    /// the timing alone.
     /// </summary>
     private void AssembleFromBin(bool overwrite)
     {
@@ -3393,15 +2900,6 @@ public sealed class MainWindow
     /// Moves a segment's sound onto an audio track, or puts it back. Needed
     /// whenever you want to keep someone's voice while cutting away from their
     /// picture.
-    /// </summary>
-    /// <summary>
-    /// Renders, reporting progress as it goes and saying what came out. Runs off
-    /// the UI thread so the editor stays usable, and only one render at a time -
-    /// two ffmpeg runs over the same cache would fight.
-    /// </summary>
-    /// <summary>
-    /// Measures the media under the cursor, or every source, and says what is
-    /// wrong with it. This is the part that replaces looking.
     /// </summary>
     private void AnalyseQuality(bool wholeProject)
     {
@@ -4249,7 +3747,7 @@ public sealed class MainWindow
         menu.GrabFocus();
     }
 
-    // ---- movement --------------------------------------------------------
+    // ---- movement ----------------------------------------------------------
 
     private void Step(bool coarser)
     {
@@ -4360,7 +3858,7 @@ public sealed class MainWindow
         ScrubHere();
     }
 
-    // ---- state -----------------------------------------------------------
+    // ---- state -------------------------------------------------------------
 
     private TimeSelection Selection() =>
         _cursor.Selection ?? new TimeSelection(_cursor.ProgrammeTime, _cursor.ProgrammeTime + 1);

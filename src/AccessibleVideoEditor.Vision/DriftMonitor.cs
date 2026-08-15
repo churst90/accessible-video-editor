@@ -6,10 +6,6 @@ namespace AccessibleVideoEditor.Vision;
 /// <summary>
 /// Watches framing and exposure while a take is recording and logs the spans
 /// where something was wrong.
-///
-/// This is the reshoot-preventer. Instead of discovering at review that you
-/// drifted out of frame, the take arrives carrying "out of frame from 2:10 to
-/// 2:24" - which drops straight into the edit as issue markers.
 /// </summary>
 public sealed class DriftMonitor
 {

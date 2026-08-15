@@ -876,6 +876,51 @@ Enter without having listened.
 
 ---
 
+## 11a. Stills **[built]**
+
+An image has no length of its own, so it is given one — four seconds by default,
+and `Ctrl+Shift+U` holds it for as long as you like.
+
+**A still does not move unless you ask it to.** A slideshow, or a two-second
+flash of a photograph, does not want a slow drift over it, and a still that
+moves when you did not ask reads as a mistake. `Ctrl+Shift+B` cycles the drift —
+zoom in, zoom out, pan left, pan right, off.
+
+---
+
+## 11b. Marking, finding and reviewing **[built]**
+
+| Key | Action |
+|---|---|
+| `M` / `Shift+M` / `Ctrl+M` | Add a marker / remove the one here / list them |
+| `Ctrl+F` | Find in the transcript |
+| `F7` | The to-do list — holes, missing files, empty cards, issue markers |
+| `Ctrl+Alt+D` | Read me the edit |
+| `Ctrl+Shift+P` | The command palette |
+
+Markers, the to-do list and search results are the same shape, so they share one
+window: arrow through it and press Enter to go there.
+
+**Read me the edit** is the thing a sighted editor gets from scrolling: how long
+it is, how many segments and of what, what is muted or hidden or disabled, what
+is on each other track, and what still needs doing.
+
+---
+
+## 11c. Titles, graphics and b-roll **[built]**
+
+| Key | Action |
+|---|---|
+| `Ctrl+Shift+L` | Add a title |
+| `Ctrl+G` | Add a graphic |
+| `Ctrl+B` | Add b-roll |
+
+Graphics and b-roll are chosen from the media bin rather than typed as a path.
+B-roll covers the picture and leaves the programme's sound alone, which is the
+whole point of it.
+
+---
+
 ## 12. Files
 
     project.json   the project — canonical

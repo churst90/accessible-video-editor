@@ -1,14 +1,10 @@
 namespace AccessibleVideoEditor.Core.Streaming;
 
 /// <summary>
-/// Live chat, which is the part of streaming that existing tools serve worst
-/// and that matters most.
-///
-/// Everything here exists to answer one question: <b>what has to be said out
-/// loud, and what must not be?</b> A busy chat read message by message is
-/// unusable - it talks over you while you are talking, and you still miss the
-/// one line that needed an answer. So chat is filtered, rate-limited and
-/// summarised, and the things that actually need you get their own earcon.
+/// Live chat. Everything here answers one question: what has to be said out
+/// loud, and what must not be. A busy chat read line by line talks over you and
+/// you still miss the one that needed an answer - so it is filtered,
+/// rate-limited and summarised, and what wants you gets an earcon.
 /// </summary>
 public sealed record ChatMessage(
     StreamPlatform Platform,
@@ -216,8 +212,6 @@ public sealed class ChatChannel(StreamPlatform platform)
 
         return _messages[ReadingAt.Value];
     }
-
-    /// <summary>Back to following along live, and the waiting count is cleared.</summary>
     public void ReturnToLive()
     {
         ReadingAt = null;

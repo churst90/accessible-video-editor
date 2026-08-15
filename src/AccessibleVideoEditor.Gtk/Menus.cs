@@ -45,6 +45,12 @@ public static class Menus
             [("review.quality", "win.quality"), ("review.qualityAll", "win.qualityAll")],
             [("review.pace", "win.pace")]));
 
+        bar.AppendSubmenu("_Mark", Section(
+            [("edit.marker", "win.marker"), ("marker.remove", "win.removeMarker"),
+             ("marker.list", "win.markerList")],
+            [("review.issues", "win.issues"), ("review.describe", "win.describeEdit")],
+            [("transcript.find", "win.find")]));
+
         bar.AppendSubmenu("_Insert", Section(
             [("track.add", "win.addTrack"), ("insert.segment", "win.insertSegment")],
             [("overlay.card", "win.card"), ("overlay.title", "win.title"),
@@ -65,7 +71,9 @@ public static class Menus
             [("transition.set", "win.setTransition"), ("transition.audition", "win.auditionTransition"),
              ("transition.sound", "win.transitionSound"), ("transition.save", "win.saveTransition")],
             [("track.volume", "win.trackVolume")],
-            [("track.add", "win.addTrack")]));
+            [("track.add", "win.addTrack")],
+            [("overlay.title", "win.title"), ("overlay.graphic", "win.graphic"),
+             ("overlay.broll", "win.broll")]));
 
         bar.AppendSubmenu("_Stream", Section(
             [("stream.starter", "win.streamStarter"), ("stream.newScene", "win.streamScene")],

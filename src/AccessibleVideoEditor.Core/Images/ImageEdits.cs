@@ -13,7 +13,7 @@ namespace AccessibleVideoEditor.Core.Images;
 /// </summary>
 public static class ImageEdits
 {
-    // ---- resizing --------------------------------------------------------
+    // ---- resizing ----------------------------------------------------------
 
     /// <summary>
     /// The sizes worth having as one key. Named by what they are for, because
@@ -143,7 +143,7 @@ public static class ImageEdits
                + $"about {document.EstimatedMegabytes():0.##} megabytes";
     }
 
-    // ---- cropping --------------------------------------------------------
+    // ---- cropping ----------------------------------------------------------
 
     /// <summary>
     /// Remove the paper around the picture. The single most useful crop there
@@ -273,7 +273,7 @@ public static class ImageEdits
         return EditResult.Ok($"back to the whole picture, {document.Width} by {document.Height}");
     }
 
-    // ---- straightening ---------------------------------------------------
+    // ---- straightening -----------------------------------------------------
 
     /// <summary>
     /// The scanner-bed fix, as one command: straighten, then crop to what was

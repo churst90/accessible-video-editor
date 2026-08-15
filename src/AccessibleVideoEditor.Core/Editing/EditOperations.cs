@@ -7,17 +7,6 @@ namespace AccessibleVideoEditor.Core.Editing;
 /// <summary>
 /// The edit verbs. Three deletes, because a video editor needs three and
 /// collapsing them is how people lose work:
-///
-/// <list type="bullet">
-/// <item><b>Ripple delete</b> - remove the range, close the gap. The normal cut.</item>
-/// <item><b>Lift</b> - replace the range with silence of the same length, so
-/// downstream timing survives. Needed the moment music or a synced demo is
-/// involved.</item>
-/// <item><b>Disable</b> - non-destructive, stays in the document, reversible.</item>
-/// </list>
-///
-/// Splitting is the primary idiom rather than time selection, because a split
-/// leaves a boundary you can navigate back to, and a selection leaves nothing.
 /// </summary>
 public static class EditOperations
 {
@@ -436,7 +425,7 @@ public static class EditOperations
             : $"{transition.Describe()} entering {target.Element.Describe()}");
     }
 
-    // ---- by identity, for the transcript ---------------------------------
+    // ---- by identity, for the transcript -----------------------------------
     //
     // The transcript addresses segments by ID rather than by time, because a
     // cut line has no programme time at all and must still be deletable,
@@ -544,7 +533,7 @@ public static class EditOperations
         return EditResult.Ok(element.Captioned ? "captioned" : "no caption");
     }
 
-    // ---- takes -----------------------------------------------------------
+    // ---- takes -------------------------------------------------------------
 
     /// <summary>
     /// Cycles to the next or previous take of the segment under the cursor.
@@ -629,10 +618,6 @@ public static class EditOperations
     /// <summary>
     /// Splits an overlay segment - a title, a card, b-roll - on a track other
     /// than the programme.
-    ///
-    /// Splitting used to always cut the spine whatever track was focused, which
-    /// meant splitting on the graphics track appeared to do nothing and then
-    /// navigation found no new boundaries.
     /// </summary>
     public static EditResult SplitItemAt(Project project, TrackId trackId, double programmeTime)
     {
@@ -708,7 +693,7 @@ public static class EditOperations
         _ => null,
     };
 
-    // ---- assembly and detaching ------------------------------------------
+    // ---- assembly and detaching --------------------------------------------
 
     /// <summary>
     /// Inserts a whole source at the cursor, rippling everything after it.
@@ -787,9 +772,6 @@ public static class EditOperations
     /// Moves a segment's sound onto an audio track, leaving the picture where it
     /// is. Needed whenever you want to keep someone's voice while cutting away
     /// from their face.
-    ///
-    /// The two stay linked, and the original is muted rather than stripped, so
-    /// the operation is reversible.
     /// </summary>
     public static EditResult DetachAudio(Project project, ElementId id, TrackId audioTrack)
     {
@@ -851,7 +833,7 @@ public static class EditOperations
         return EditResult.Ok("audio reattached");
     }
 
-    // ---- internals -------------------------------------------------------
+    // ---- internals ---------------------------------------------------------
 
     private static bool AreContiguous(SpineElement first, SpineElement second) =>
         (first, second) switch
@@ -903,7 +885,6 @@ public static class EditOperations
 
         return warnings.Distinct().ToList();
     }
-
 
     /// <summary>
     /// Splits at both ends, drops what is between, then re-anchors every

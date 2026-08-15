@@ -158,11 +158,6 @@ public sealed class YouTubeChatClient(HttpClient? http = null) : IChatClient
     /// <summary>
     /// The parsing, separate from the network so it can be tested against real
     /// responses without an account.
-    ///
-    /// YouTube has no first-message flag, so a first-timer is worked out from
-    /// who has been seen this session. That is a slightly different meaning
-    /// from Twitch's - first time <i>today</i> rather than ever - and it is the
-    /// more useful one while you are live anyway.
     /// </summary>
     public static YouTubeChatPage ParsePage(string json, HashSet<string>? seenAuthors = null)
     {

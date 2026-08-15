@@ -3,22 +3,12 @@ using AccessibleVideoEditor.Core.Editing;
 namespace AccessibleVideoEditor.Core.Images;
 
 /// <summary>
-/// The curve, made of things that can be said.
-///
-/// A levels curve is a graph you drag, which is the least accessible control in
-/// any image editor. But the graph is only a picture of five numbers, and the
-/// numbers have names photographers already use: the <b>black point</b>, the
-/// <b>white point</b>, and how the <b>shadows</b>, <b>midtones</b> and
-/// <b>highlights</b> sit between them. So those are the control, each one
-/// nudged and read back, and the histogram underneath is read out by zone -
-/// which is what the graph was showing all along.
-///
-/// The named corrections in <see cref="ColourEdits"/> are the fast path. This
-/// is the one for when they are not precise enough.
+/// The curve, made of things that can be said. A levels graph is a picture of
+/// five numbers, and the numbers have names photographers already use - so
+/// those are the control, and the histogram is read out by zone.
 /// </summary>
 public sealed record Levels
 {
-    /// <summary>Whichever channel a nudge is aimed at.</summary>
     public Levels WithChannel(int channel, ChannelLevels levels) => channel switch
     {
         0 => this with { Red = levels },
@@ -52,12 +42,6 @@ public sealed record Levels
     /// <summary>
     /// The same points, per channel, for a cast the temperature control cannot
     /// reach.
-    ///
-    /// Temperature moves the whole picture along one axis, from orange to blue.
-    /// A scan with a yellowed page, a photograph taken under a mixed light, or
-    /// a print that has faded unevenly is off in a direction that axis does not
-    /// pass through - and no amount of "warmer" will fix it. This will, because
-    /// each channel is stretched to its own range.
     /// </summary>
     public ChannelLevels Red { get; init; } = ChannelLevels.None;
 

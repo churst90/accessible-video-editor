@@ -69,7 +69,7 @@ public sealed partial class Recorder(string ffmpegPath = "ffmpeg")
         return new RecordingSession(process, outputPath);
     }
 
-    // ---- command building, pure and testable -----------------------------
+    // ---- command building, pure and testable -------------------------------
 
     /// <summary>
     /// Camera plus microphone into one file. Recorded at a fast preset because
@@ -125,10 +125,6 @@ public sealed partial class Recorder(string ffmpegPath = "ffmpeg")
     /// <summary>
     /// Takes one input of a multi-input interface and makes it the whole
     /// recording.
-    ///
-    /// A two-input interface presents as a single stereo source, so recording
-    /// it whole puts the microphone on the left and silence on the right. That
-    /// sounds like a broken take, and there is no meter to notice it on.
     /// </summary>
     public static string? PanFilter(InputChannel channel) => channel switch
     {
@@ -149,7 +145,7 @@ public sealed partial class Recorder(string ffmpegPath = "ffmpeg")
         "-t", "1", "-vf", "blackdetect=d=0.5:pic_th=0.98", "-f", "null", "-",
     ];
 
-    // ---- output interpretation, pure and testable ------------------------
+    // ---- output interpretation, pure and testable --------------------------
 
     /// <summary>
     /// A microphone reading below about -55 dB over a whole second is silence,

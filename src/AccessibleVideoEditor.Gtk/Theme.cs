@@ -19,7 +19,7 @@ namespace AccessibleVideoEditor.Gtk;
 /// </summary>
 public static class Theme
 {
-    // ---- surfaces --------------------------------------------------------
+    // ---- surfaces ----------------------------------------------------------
 
     public static readonly Rgb Window = Rgb.Hex("#12141a");
     public static readonly Rgb Panel = Rgb.Hex("#191c24");
@@ -29,13 +29,13 @@ public static class Theme
     public static readonly Rgb LaneEven = Rgb.Hex("#1b1f28");
     public static readonly Rgb LaneFocused = Rgb.Hex("#20263a");
 
-    // ---- ink -------------------------------------------------------------
+    // ---- ink ---------------------------------------------------------------
 
     public static readonly Rgb Text = Rgb.Hex("#e9ecf5");
     public static readonly Rgb Muted = Rgb.Hex("#a9b1c7");
     public static readonly Rgb Faint = Rgb.Hex("#727b93");
 
-    // ---- signal ----------------------------------------------------------
+    // ---- signal ------------------------------------------------------------
 
     public static readonly Rgb Accent = Rgb.Hex("#5b8cff");
     public static readonly Rgb Playhead = Rgb.Hex("#ff5f5f");

@@ -86,10 +86,6 @@ public sealed class CardComposition
     /// <summary>
     /// The full read-out of a card: what its background is, how it is laid
     /// out, and every layer with where it actually sits.
-    ///
-    /// A card is the one segment whose contents are entirely invisible without
-    /// this. "Card" tells you nothing about whether the logo made it on, or
-    /// whether the subtitle ended up behind your face.
     /// </summary>
     public string Summarise()
     {

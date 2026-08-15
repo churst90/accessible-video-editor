@@ -7,15 +7,6 @@ namespace AccessibleVideoEditor.Core.Navigation;
 /// <summary>
 /// The transcript as a single body of text, with a character-offset to
 /// programme-time map in both directions.
-///
-/// This is what makes moving between the two panes work: the cursor never
-/// moves, the lens changes. Tab into the transcript and the caret is already
-/// on the word that was under the timeline cursor; Tab back and the timeline
-/// is where the caret was.
-///
-/// Cut spans are included, marked. They have no programme time - you cannot be
-/// "at" a moment that is not in the video - so they map to the boundary where
-/// they would sit, and the UI says so rather than snapping silently.
 /// </summary>
 public sealed class TranscriptDocument
 {

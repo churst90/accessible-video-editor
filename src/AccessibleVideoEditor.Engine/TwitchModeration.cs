@@ -156,7 +156,7 @@ public sealed class TwitchModeration(HttpClient? http = null)
         : seconds >= 60 ? $"{seconds / 60} minutes"
         : $"{seconds} seconds";
 
-    // ---- plumbing --------------------------------------------------------
+    // ---- plumbing ----------------------------------------------------------
 
     private async Task<string?> GetAsync(string url, CancellationToken ct)
     {

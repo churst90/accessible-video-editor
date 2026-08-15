@@ -135,7 +135,7 @@ public sealed class ImageView
         return row;
     }
 
-    // ---- opening ---------------------------------------------------------
+    // ---- opening -----------------------------------------------------------
 
     /// <summary>
     /// Opening measures first and says what it found, because the first
@@ -144,34 +144,37 @@ public sealed class ImageView
     /// </summary>
     public async void Open(string path)
     {
-        Say($"opening {System.IO.Path.GetFileName(path)}");
-
-        var examined = await _io.ExamineAsync(path);
-
-        if (examined is not { } found)
+        await Guard(async () =>
         {
-            Say("that is not a picture I can read", urgent: true);
-            return;
-        }
+            Say($"opening {System.IO.Path.GetFileName(path)}");
 
-        var (facts, report) = found;
+            var examined = await _io.ExamineAsync(path);
 
-        var document = ImageDocument.Open(path, facts.Width, facts.Height, facts.Dpi);
-        document.Report = report;
+            if (examined is not { } found)
+            {
+                Say("that is not a picture I can read", urgent: true);
+                return;
+            }
 
-        // Opening starts a new history rather than adding to the old one:
-        // undoing past the moment a picture was opened would land you in a
-        // different picture.
-        _history.Open(document);
+            var (facts, report) = found;
 
-        // Kept for the pointer and the colour advice: both ask questions about
-        // the picture, and neither is worth a round trip to ffmpeg per press.
-        _raster = await _io.DecodeAsync(path);
-        _colours = await _io.DecodeColourAsync(path);
+            var document = ImageDocument.Open(path, facts.Width, facts.Height, facts.Dpi);
+            document.Report = report;
 
-        Refresh();
+            // Opening starts a new history rather than adding to the old one:
+            // undoing past the moment a picture was opened would land you in a
+            // different picture.
+            _history.Open(document);
 
-        Say($"{document.Describe()}. {report.Describe()}. {report.Offer()}", urgent: true);
+            // Kept for the pointer and the colour advice: both ask questions about
+            // the picture, and neither is worth a round trip to ffmpeg per press.
+            _raster = await _io.DecodeAsync(path);
+            _colours = await _io.DecodeColourAsync(path);
+
+            Refresh();
+
+            Say($"{document.Describe()}. {report.Describe()}. {report.Offer()}", urgent: true);
+        }, "opening the picture");
     }
 
     /// <summary>
@@ -181,22 +184,25 @@ public sealed class ImageView
     /// </summary>
     public async void Describe()
     {
-        if (Document is not { } document) return;
-
-        Say("looking at it");
-
-        var describer = new FrameDescriber();
-
-        if (!describer.IsAvailable)
+        await Guard(async () =>
         {
-            Say("the claude command is not installed, so pictures cannot be described", urgent: true);
-            return;
-        }
+            if (Document is not { } document) return;
 
-        Say(await describer.DescribeAsync(document.Path), urgent: true);
+            Say("looking at it");
+
+            var describer = new FrameDescriber();
+
+            if (!describer.IsAvailable)
+            {
+                Say("the claude command is not installed, so pictures cannot be described", urgent: true);
+                return;
+            }
+
+            Say(await describer.DescribeAsync(document.Path), urgent: true);
+        }, "describing it");
     }
 
-    // ---- what is on screen -----------------------------------------------
+    // ---- what is on screen -------------------------------------------------
 
     public void Refresh()
     {
@@ -301,7 +307,7 @@ public sealed class ImageView
         while (list.GetFirstChild() is { } child) list.Remove(child);
     }
 
-    // ---- editing ---------------------------------------------------------
+    // ---- editing -----------------------------------------------------------
 
     /// <summary>
     /// Every edit goes through the history, so everything is undoable by
@@ -453,20 +459,23 @@ public sealed class ImageView
     /// <summary>The colour at a point in the real image, named before it is valued.</summary>
     public async void SampleColour(double x, double y)
     {
-        if (Document is not { } document) return;
+        await Guard(async () =>
+        {
+            if (Document is not { } document) return;
 
-        var point = await _io.SampleAsync(
-            document.Path,
-            (int)Math.Clamp(x, 0, document.SourceWidth - 1),
-            (int)Math.Clamp(y, 0, document.SourceHeight - 1));
+            var point = await _io.SampleAsync(
+                document.Path,
+                (int)Math.Clamp(x, 0, document.SourceWidth - 1),
+                (int)Math.Clamp(y, 0, document.SourceHeight - 1));
 
-        Say(point is { } colour
-            ? $"{Colours.Describe(colour.R, colour.G, colour.B)}, "
-              + $"{document.PlacementAt(x, y).Describe()}"
-            : "could not read that point", urgent: true);
+            Say(point is { } colour
+                ? $"{Colours.Describe(colour.R, colour.G, colour.B)}, "
+                  + $"{document.PlacementAt(x, y).Describe()}"
+                : "could not read that point", urgent: true);
+        }, "reading that point");
     }
 
-    // ---- the pointer you can hear ----------------------------------------
+    // ---- the pointer you can hear ------------------------------------------
 
     /// <summary>
     /// Turns sweeping on. From here the arrow keys move a pointer rather than
@@ -570,7 +579,7 @@ public sealed class ImageView
         _audio()?.Play(tone.PitchHz, 0.05, 0.35, tone.Pan);
     }
 
-    // ---- colour ----------------------------------------------------------
+    // ---- colour ------------------------------------------------------------
 
     /// <summary>
     /// What is wrong with the picture and what would fix it, in the same words
@@ -593,7 +602,7 @@ public sealed class ImageView
     public void Correct(string preset) =>
         Apply(preset, document => ColourEdits.Apply(document, preset));
 
-    // ---- levels ----------------------------------------------------------
+    // ---- levels ------------------------------------------------------------
 
     /// <summary>
     /// The curve, as numbers with names. Auto is separate because it needs the
@@ -674,7 +683,7 @@ public sealed class ImageView
         Say($"{zones.Summarise()}. {zones.Describe()}", urgent: true);
     }
 
-    // ---- doing it to a folder --------------------------------------------
+    // ---- doing it to a folder ----------------------------------------------
 
     /// <summary>
     /// The corrections travel; the geometry is measured per picture. Said out
@@ -702,14 +711,17 @@ public sealed class ImageView
         Say(result.Describe(), urgent: true);
     }
 
-    // ---- exporting -------------------------------------------------------
+    // ---- exporting ---------------------------------------------------------
 
     public async void Export(string path)
     {
-        if (Document is null) return;
+        await Guard(async () =>
+        {
+            if (Document is null) return;
 
-        Say("saving");
-        Say(await ExportTo(path), urgent: true);
+            Say("saving");
+            Say(await ExportTo(path), urgent: true);
+        }, "saving");
     }
 
     /// <summary>
@@ -724,21 +736,42 @@ public sealed class ImageView
 
     public async void Split(string directory)
     {
-        if (Document is not { } document) return;
-
-        if (document.Report is not { Regions.Count: > 1 })
+        await Guard(async () =>
         {
-            Say("there is only one picture here", urgent: true);
-            return;
-        }
+            if (Document is not { } document) return;
 
-        Say("splitting");
+            if (document.Report is not { Regions.Count: > 1 })
+            {
+                Say("there is only one picture here", urgent: true);
+                return;
+            }
 
-        Say(await _io.SplitAsync(document, directory), urgent: true);
+            Say("splitting");
+
+            Say(await _io.SplitAsync(document, directory), urgent: true);
+        }, "splitting");
     }
 
-    // ---- speech ----------------------------------------------------------
+    // ---- speech ------------------------------------------------------------
 
     private void Say(string text, bool urgent = false) =>
         _announcer().Say(text, urgent ? AnnouncePriority.Urgent : AnnouncePriority.Normal);
+
+    /// <summary>
+    /// Guards an entry point called from a key or a menu. Without it an
+    /// exception in one of these takes the process down instead of being
+    /// announced.
+    /// </summary>
+    private async Task Guard(Func<Task> work, string what)
+    {
+        try
+        {
+            await work();
+        }
+        catch (Exception exception)
+        {
+            Say($"{what} failed: {exception.Message}", urgent: true);
+        }
+    }
+
 }

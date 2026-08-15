@@ -3,17 +3,9 @@ using AccessibleVideoEditor.Core.Model;
 namespace AccessibleVideoEditor.Core.Images;
 
 /// <summary>
-/// Drawing, as a language rather than as a gesture.
-///
-/// This is the answer to brush and fill. Freehand painting is a gesture, and
-/// making a gesture accessible is the wrong problem - so it is replaced by
-/// something a person can say: <i>"circle at cell 5, radius 20 percent, deep
-/// blue"</i>. That is exact, repeatable, editable afterwards, and reads back as
-/// a list of statements rather than as a picture nobody can describe.
-///
-/// Everything is in <b>fractions of the canvas</b>, never in pixels, so the
-/// same drawing works at any size and "a fifth of the way across" means what it
-/// says.
+/// Drawing as a language rather than a gesture: "circle at cell 5, radius 20
+/// percent, deep blue". Exact, repeatable, editable afterwards, and it reads
+/// back as statements rather than as a picture nobody can describe.
 /// </summary>
 public sealed record Shape
 {

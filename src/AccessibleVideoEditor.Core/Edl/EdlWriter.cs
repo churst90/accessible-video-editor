@@ -8,10 +8,6 @@ namespace AccessibleVideoEditor.Core.Edl;
 /// <summary>
 /// Exports the project as <c>edit.md</c>, the line-oriented format the CLI and
 /// the Claude skill already speak.
-///
-/// The export is written on every save. It is not a backup - it is a live
-/// second face of the document, so pluma stays a working escape hatch and the
-/// project remains diffable in git.
 /// </summary>
 public static class EdlWriter
 {

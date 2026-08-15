@@ -5,24 +5,11 @@ using AccessibleVideoEditor.Core.Timeline;
 namespace AccessibleVideoEditor.Core.Editing;
 
 /// <summary>
-/// What Delete would delete.
-///
-/// Context-aware editing is not optional here. On a visual timeline you can see
-/// whether a clip is highlighted or a range is marked out, so one Delete key is
-/// unambiguous. With nothing to look at, the same key with three possible
-/// meanings is a trap - so the target is resolved by an explicit rule, and it
-/// is always spoken.
-///
-/// Resolution order, most specific first:
-/// <list type="number">
-/// <item>A time selection, if one is marked.</item>
-/// <item>The item under the cursor on the focused track.</item>
-/// <item>Nothing - and the application says "nothing under the cursor" rather
-/// than guessing.</item>
-/// </list>
-///
-/// Deleting a <b>track</b> is never on Delete. It is its own command, and it
-/// confirms first.
+/// What Delete would delete. With nothing to look at, one key with three
+/// possible meanings is a trap - so the target is resolved by an explicit rule
+/// (a marked range, else what is under the cursor, else nothing) and is always
+/// spoken. Deleting a track is never on Delete; it is its own command and it
+/// confirms.
 /// </summary>
 public static class EditTarget
 {

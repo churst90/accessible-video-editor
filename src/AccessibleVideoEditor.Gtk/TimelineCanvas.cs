@@ -75,7 +75,7 @@ public sealed class TimelineCanvas
         }
     }
 
-    // ---- lanes -----------------------------------------------------------
+    // ---- lanes -------------------------------------------------------------
 
     private static void DrawLanes(Cairo.Context cr, TimelineView view, int width)
     {
@@ -122,7 +122,7 @@ public sealed class TimelineCanvas
         cr.Fill();
     }
 
-    // ---- blocks ----------------------------------------------------------
+    // ---- blocks ------------------------------------------------------------
 
     private void DrawBlocks(Cairo.Context cr, TimelineView view)
     {
@@ -343,7 +343,7 @@ public sealed class TimelineCanvas
         return text[..(characters - 1)] + "…";
     }
 
-    // ---- ruler and playhead ----------------------------------------------
+    // ---- ruler and playhead ------------------------------------------------
 
     private static void DrawRuler(Cairo.Context cr, TimelineView view, int width)
     {
@@ -391,7 +391,7 @@ public sealed class TimelineCanvas
         cr.Fill();
     }
 
-    // ---- primitives ------------------------------------------------------
+    // ---- primitives --------------------------------------------------------
 
     private static void Fill(Cairo.Context cr, Rgb colour, double x, double y, double w, double h)
     {

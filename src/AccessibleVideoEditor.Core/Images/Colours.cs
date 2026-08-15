@@ -67,8 +67,6 @@ public static class Colours
 
         return best;
     }
-
-    /// <summary>Name first, then the value for anyone who wants it.</summary>
     public static string Describe(byte r, byte g, byte b) =>
         $"{NameOf(r, g, b)}, {Hex(r, g, b)}";
 

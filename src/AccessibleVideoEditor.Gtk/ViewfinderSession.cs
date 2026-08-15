@@ -151,40 +151,43 @@ public sealed class ViewfinderSession(Func<IAnnouncer> announcer, Func<SdlAudioO
     /// </summary>
     public async void DescribeShot()
     {
-        if (_camera.Latest is not { } frame)
+        await Guard(async () =>
         {
-            Say("the viewfinder is not open", urgent: true);
-            return;
-        }
-
-        Say("looking");
-
-        var path = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "viewfinder-shot.png");
-
-        var canvas = new AccessibleVideoEditor.Core.Images.Canvas(
-            ViewfinderCamera.Width, ViewfinderCamera.Height);
-
-        for (var y = 0; y < ViewfinderCamera.Height; y++)
-        {
-            for (var x = 0; x < ViewfinderCamera.Width; x++)
+            if (_camera.Latest is not { } frame)
             {
-                var at = (y * ViewfinderCamera.Width + x) * 3;
-
-                canvas.Set(x, y, (frame[at], frame[at + 1], frame[at + 2]));
+                Say("the viewfinder is not open", urgent: true);
+                return;
             }
-        }
 
-        canvas.WritePng(path);
+            Say("looking");
 
-        var describer = new FrameDescriber();
+            var path = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "viewfinder-shot.png");
 
-        if (!describer.IsAvailable)
-        {
-            Say("the claude command is not installed, so the shot cannot be described", urgent: true);
-            return;
-        }
+            var canvas = new AccessibleVideoEditor.Core.Images.Canvas(
+                ViewfinderCamera.Width, ViewfinderCamera.Height);
 
-        Say(await describer.DescribeAsync(path), urgent: true);
+            for (var y = 0; y < ViewfinderCamera.Height; y++)
+            {
+                for (var x = 0; x < ViewfinderCamera.Width; x++)
+                {
+                    var at = (y * ViewfinderCamera.Width + x) * 3;
+
+                    canvas.Set(x, y, (frame[at], frame[at + 1], frame[at + 2]));
+                }
+            }
+
+            canvas.WritePng(path);
+
+            var describer = new FrameDescriber();
+
+            if (!describer.IsAvailable)
+            {
+                Say("the claude command is not installed, so the shot cannot be described", urgent: true);
+                return;
+            }
+
+            Say(await describer.DescribeAsync(path), urgent: true);
+        }, "describing the shot");
     }
 
     public void Close()
@@ -209,4 +212,22 @@ public sealed class ViewfinderSession(Func<IAnnouncer> announcer, Func<SdlAudioO
 
         _camera.Dispose();
     }
+
+    /// <summary>
+    /// Guards an entry point called from a key or a menu. Without it an
+    /// exception in one of these takes the process down instead of being
+    /// announced.
+    /// </summary>
+    private async Task Guard(Func<Task> work, string what)
+    {
+        try
+        {
+            await work();
+        }
+        catch (Exception exception)
+        {
+            Say($"{what} failed: {exception.Message}", urgent: true);
+        }
+    }
+
 }

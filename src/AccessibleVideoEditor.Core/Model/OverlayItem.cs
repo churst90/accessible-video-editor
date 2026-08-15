@@ -97,10 +97,6 @@ public sealed class CardItem : OverlayItem
 /// <summary>
 /// A piece of audio on an audio track - most often a segment's own sound, moved
 /// off the picture so the two can be cut independently.
-///
-/// <see cref="LinkedTo"/> keeps the pair together: editing one moves the other
-/// until they are deliberately unlinked. Without it, detaching audio silently
-/// creates two things that drift apart, which is unrecoverable by ear.
 /// </summary>
 public sealed class AudioItem : OverlayItem
 {

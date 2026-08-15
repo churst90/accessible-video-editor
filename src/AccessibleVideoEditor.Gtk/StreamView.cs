@@ -111,7 +111,7 @@ public sealed class StreamView
             return false;
         });
 
-    // ---- widgets ---------------------------------------------------------
+    // ---- widgets -----------------------------------------------------------
 
     public Gtk_.Widget Build()
     {
@@ -228,7 +228,7 @@ public sealed class StreamView
         return row;
     }
 
-    // ---- areas -----------------------------------------------------------
+    // ---- areas -------------------------------------------------------------
 
     private IReadOnlyList<StreamAreaRef> Areas() => StreamAreas.For(Setup, Chat);
 
@@ -280,7 +280,7 @@ public sealed class StreamView
 
     public string CurrentAreaName => _area.Name;
 
-    // ---- what is on screen -----------------------------------------------
+    // ---- what is on screen -------------------------------------------------
 
     public void Refresh()
     {
@@ -383,7 +383,7 @@ public sealed class StreamView
         while (list.GetFirstChild() is { } child) list.Remove(child);
     }
 
-    // ---- scenes ----------------------------------------------------------
+    // ---- scenes ------------------------------------------------------------
 
     private SceneId? SelectedScene()
     {
@@ -454,7 +454,7 @@ public sealed class StreamView
         Announce(SceneOperations.RenameScene(Setup, id, name));
     }
 
-    // ---- sources ---------------------------------------------------------
+    // ---- sources -----------------------------------------------------------
 
     public void AddSource(StreamSource source, double scale = 1.0, Placement? placement = null)
     {
@@ -505,7 +505,7 @@ public sealed class StreamView
         Announce(SceneOperations.Place(Setup, scene, reference, placement, scale));
     }
 
-    // ---- chat ------------------------------------------------------------
+    // ---- chat --------------------------------------------------------------
 
     private void Receive(ChatMessage message)
     {
@@ -530,65 +530,74 @@ public sealed class StreamView
 
     public async void ConnectTwitch(string channel, string? token = null)
     {
-        Say($"connecting to {channel} on twitch");
-
-        var result = await _twitch.ConnectAsync(channel, token ?? _secrets.TwitchToken);
-
-        Chat.Channel(StreamPlatform.Twitch).Connected = _twitch.Connected;
-
-        if (_twitch.Connected)
+        await Guard(async () =>
         {
-            _settings.Streaming.TwitchChannel = channel;
-            _settings.Save();
+            Say($"connecting to {channel} on twitch");
 
-            // Helix works in numeric ids, so the channel name is resolved once
-            // here rather than on every moderation key.
-            _moderation.BroadcasterId = await _moderation.UserIdAsync(channel) ?? string.Empty;
-        }
+            var result = await _twitch.ConnectAsync(channel, token ?? _secrets.TwitchToken);
 
-        Refresh();
-        Say(result, urgent: true);
+            Chat.Channel(StreamPlatform.Twitch).Connected = _twitch.Connected;
+
+            if (_twitch.Connected)
+            {
+                _settings.Streaming.TwitchChannel = channel;
+                _settings.Save();
+
+                // Helix works in numeric ids, so the channel name is resolved once
+                // here rather than on every moderation key.
+                _moderation.BroadcasterId = await _moderation.UserIdAsync(channel) ?? string.Empty;
+            }
+
+            Refresh();
+            Say(result, urgent: true);
+        }, "connecting to twitch");
     }
 
     public async void ConnectYouTube(string videoId)
     {
-        Say("connecting to youtube chat");
-
-        _youtube.ApiKey = _secrets.YouTubeApiKey;
-        _youtube.OAuthToken = _secrets.YouTubeOAuthToken;
-
-        var result = await _youtube.ConnectAsync(videoId);
-
-        Chat.Channel(StreamPlatform.YouTube).Connected = _youtube.Connected;
-
-        if (_youtube.Connected)
+        await Guard(async () =>
         {
-            _settings.Streaming.YouTubeVideoId = videoId;
-            _settings.Save();
-        }
+            Say("connecting to youtube chat");
 
-        Refresh();
-        Say(result, urgent: true);
+            _youtube.ApiKey = _secrets.YouTubeApiKey;
+            _youtube.OAuthToken = _secrets.YouTubeOAuthToken;
+
+            var result = await _youtube.ConnectAsync(videoId);
+
+            Chat.Channel(StreamPlatform.YouTube).Connected = _youtube.Connected;
+
+            if (_youtube.Connected)
+            {
+                _settings.Streaming.YouTubeVideoId = videoId;
+                _settings.Save();
+            }
+
+            Refresh();
+            Say(result, urgent: true);
+        }, "connecting to youtube");
     }
 
     public async void ConnectFacebook(string liveVideoId)
     {
-        Say("connecting to facebook comments");
-
-        _facebook.Token = _secrets.FacebookToken;
-
-        var result = await _facebook.ConnectAsync(liveVideoId);
-
-        Chat.Channel(StreamPlatform.Facebook).Connected = _facebook.Connected;
-
-        if (_facebook.Connected)
+        await Guard(async () =>
         {
-            _settings.Streaming.FacebookLiveVideoId = liveVideoId;
-            _settings.Save();
-        }
+            Say("connecting to facebook comments");
 
-        Refresh();
-        Say(result, urgent: true);
+            _facebook.Token = _secrets.FacebookToken;
+
+            var result = await _facebook.ConnectAsync(liveVideoId);
+
+            Chat.Channel(StreamPlatform.Facebook).Connected = _facebook.Connected;
+
+            if (_facebook.Connected)
+            {
+                _settings.Streaming.FacebookLiveVideoId = liveVideoId;
+                _settings.Save();
+            }
+
+            Refresh();
+            Say(result, urgent: true);
+        }, "connecting to facebook");
     }
 
     /// <summary>Connects everything that is configured, when the view opens.</summary>
@@ -640,23 +649,26 @@ public sealed class StreamView
 
     private async void SendReply()
     {
-        var text = _reply.GetText();
-        if (text.Length == 0) return;
-
-        // Sent to the platform whose pane you are in, never to "all chats".
-        // A reply that lands on the wrong service cannot be taken back.
-        if (_area.Platform is not StreamPlatform.Twitch)
+        await Guard(async () =>
         {
-            Say("this chat cannot be replied to yet; move to the twitch pane with Control backtick", urgent: true);
-            return;
-        }
+            var text = _reply.GetText();
+            if (text.Length == 0) return;
 
-        _reply.SetText(string.Empty);
+            // Sent to the platform whose pane you are in, never to "all chats".
+            // A reply that lands on the wrong service cannot be taken back.
+            if (_area.Platform is not StreamPlatform.Twitch)
+            {
+                Say("this chat cannot be replied to yet; move to the twitch pane with Control backtick", urgent: true);
+                return;
+            }
 
-        Say(await _twitch.SendAsync(text), urgent: true);
+            _reply.SetText(string.Empty);
+
+            Say(await _twitch.SendAsync(text), urgent: true);
+        }, "sending");
     }
 
-    // ---- going live ------------------------------------------------------
+    // ---- going live --------------------------------------------------------
 
     /// <summary>
     /// Reads the preflight list rather than starting, so the answer to "am I
@@ -673,36 +685,39 @@ public sealed class StreamView
 
     public async void ToggleLive()
     {
-        if (Setup.IsLive)
+        await Guard(async () =>
         {
-            var stopped = _encoder.Stop(Setup);
+            if (Setup.IsLive)
+            {
+                var stopped = _encoder.Stop(Setup);
 
-            Earcon(AccessibleVideoEditor.Speech.Earcon.OffAir);
+                Earcon(AccessibleVideoEditor.Speech.Earcon.OffAir);
+                Refresh();
+                Say(stopped, urgent: true);
+
+                return;
+            }
+
+            var problems = SceneOperations.PreflightWarnings(Setup);
+
+            if (problems.Count > 0)
+            {
+                Earcon(AccessibleVideoEditor.Speech.Earcon.Refused);
+                Say($"not going live: {string.Join(". ", problems)}", urgent: true);
+
+                return;
+            }
+
+            var settings = EncoderSettings.ForTargets(Setup.Targets);
+
+            Say(StreamEncoder.Describe(Setup, settings));
+
+            var result = await _encoder.StartAsync(Setup, Setup.Live!, settings);
+
+            Earcon(Setup.IsLive ? AccessibleVideoEditor.Speech.Earcon.OnAir : AccessibleVideoEditor.Speech.Earcon.Refused);
             Refresh();
-            Say(stopped, urgent: true);
-
-            return;
-        }
-
-        var problems = SceneOperations.PreflightWarnings(Setup);
-
-        if (problems.Count > 0)
-        {
-            Earcon(AccessibleVideoEditor.Speech.Earcon.Refused);
-            Say($"not going live: {string.Join(". ", problems)}", urgent: true);
-
-            return;
-        }
-
-        var settings = EncoderSettings.ForTargets(Setup.Targets);
-
-        Say(StreamEncoder.Describe(Setup, settings));
-
-        var result = await _encoder.StartAsync(Setup, Setup.Live!, settings);
-
-        Earcon(Setup.IsLive ? AccessibleVideoEditor.Speech.Earcon.OnAir : AccessibleVideoEditor.Speech.Earcon.Refused);
-        Refresh();
-        Say(result, urgent: true);
+            Say(result, urgent: true);
+        }, "going live");
     }
 
     /// <summary>
@@ -767,7 +782,7 @@ public sealed class StreamView
         if (Setup.IsLive) _encoder.Stop(Setup);
     }
 
-    // ---- how the stream is doing -----------------------------------------
+    // ---- how the stream is doing -------------------------------------------
 
     private void OnHealth(StreamStats stats)
     {
@@ -842,7 +857,7 @@ public sealed class StreamView
         _announcer().Earcon(AccessibleVideoEditor.Speech.Earcon.Boundary);
     }
 
-    // ---- music -----------------------------------------------------------
+    // ---- music -------------------------------------------------------------
 
     /// <summary>
     /// Starting the music checks something a sighted streamer would find out
@@ -923,7 +938,7 @@ public sealed class StreamView
         StartCurrentTrack();
     }
 
-    // ---- moderation ------------------------------------------------------
+    // ---- moderation --------------------------------------------------------
 
     private ChatMessage? SelectedMessage()
     {
@@ -945,29 +960,32 @@ public sealed class StreamView
     /// </summary>
     public async void Moderate(ChatAction action, int? seconds = null)
     {
-        if (_area.Platform is not { } platform)
+        await Guard(async () =>
         {
-            Say("move to a chat pane first with Control backtick", urgent: true);
-            return;
-        }
+            if (_area.Platform is not { } platform)
+            {
+                Say("move to a chat pane first with Control backtick", urgent: true);
+                return;
+            }
 
-        var capabilities = ChatCapabilities.For(platform);
+            var capabilities = ChatCapabilities.For(platform);
 
-        if (!capabilities.Can(action))
-        {
-            Earcon(AccessibleVideoEditor.Speech.Earcon.Refused);
-            Say(capabilities.Explain(action, platform), urgent: true);
+            if (!capabilities.Can(action))
+            {
+                Earcon(AccessibleVideoEditor.Speech.Earcon.Refused);
+                Say(capabilities.Explain(action, platform), urgent: true);
 
-            return;
-        }
+                return;
+            }
 
-        if (SelectedMessage() is not { } message)
-        {
-            Say("no message selected", urgent: true);
-            return;
-        }
+            if (SelectedMessage() is not { } message)
+            {
+                Say("no message selected", urgent: true);
+                return;
+            }
 
-        Say(await Perform(action, platform, message, seconds), urgent: true);
+            Say(await Perform(action, platform, message, seconds), urgent: true);
+        }, "that moderation");
     }
 
     private async Task<string> Perform(
@@ -1032,7 +1050,7 @@ public sealed class StreamView
         _ => false,
     };
 
-    // ---- speech ----------------------------------------------------------
+    // ---- speech ------------------------------------------------------------
 
     private void Announce(EditResult result)
     {
@@ -1044,4 +1062,22 @@ public sealed class StreamView
         _announcer().Say(text, urgent ? AnnouncePriority.Urgent : AnnouncePriority.Normal);
 
     private void Earcon(Earcon earcon) => _announcer().Earcon(earcon);
+
+    /// <summary>
+    /// Guards an entry point called from a key or a menu. Without it an
+    /// exception in one of these takes the process down instead of being
+    /// announced.
+    /// </summary>
+    private async Task Guard(Func<Task> work, string what)
+    {
+        try
+        {
+            await work();
+        }
+        catch (Exception exception)
+        {
+            Say($"{what} failed: {exception.Message}", urgent: true);
+        }
+    }
+
 }

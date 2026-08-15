@@ -584,13 +584,15 @@ public class StillTests
     }
 
     [Fact]
-    public void An_inserted_still_gets_movement_by_default()
+    public void An_inserted_still_does_not_move_unless_you_ask_it_to()
     {
-        // A still that does not move reads as a frozen video.
+        // A slideshow, or a two-second flash of a photograph, does not want a
+        // slow drift over it - and a still that moves when you did not ask
+        // reads as a mistake.
         var project = WithStill(out var image);
         AccessibleVideoEditor.Core.Editing.EditOperations.InsertSource(project, image, 0);
 
-        Assert.NotEqual(KenBurns.None, project.Spine[0].KenBurns);
+        Assert.Equal(KenBurns.None, project.Spine[0].KenBurns);
     }
 
     [Fact]
@@ -640,6 +642,7 @@ public class StillTests
     {
         var project = WithStill(out var image);
         AccessibleVideoEditor.Core.Editing.EditOperations.InsertSource(project, image, 0);
+        AccessibleVideoEditor.Core.Editing.EditOperations.CycleKenBurns(project, 0);
 
         var placed = TimelineMap.Build(project).Elements[0];
         var arguments = SegmentFilters.Build(project, placed, RenderQuality.Draft, "photo.png", "o.mkv");

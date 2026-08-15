@@ -5,10 +5,6 @@ namespace AccessibleVideoEditor.Core.Model;
 /// <summary>
 /// The spine is the ordered list that defines programme time. Everything else
 /// in the project anchors to it.
-///
-/// It is a sequence rather than a set of absolute-timed clips because that is
-/// what makes transcript editing work: deleting a sentence deletes time, and
-/// reordering sentences reorders the video, with no coordinates to fix up.
 /// </summary>
 [JsonPolymorphic(TypeDiscriminatorPropertyName = "kind")]
 [JsonDerivedType(typeof(SpanElement), "span")]
@@ -51,11 +47,6 @@ public abstract class SpineElement
     /// <summary>
     /// What appears as a caption over this segment. Null falls back to the
     /// transcript text for speech, and to nothing for everything else.
-    ///
-    /// Separate from the transcript because they answer different questions:
-    /// the transcript is what was said, the caption is what is shown. Fixing
-    /// Whisper's spelling of a name here fixes captions.srt without touching
-    /// the cut.
     /// </summary>
     public string? Caption { get; set; }
 

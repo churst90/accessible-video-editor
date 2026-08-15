@@ -7,10 +7,6 @@ namespace AccessibleVideoEditor.Engine;
 /// <summary>
 /// Composites the overlay tracks onto the joined programme: titles and cards,
 /// and the music bed underneath.
-///
-/// Overlays are applied in one pass over the finished picture rather than
-/// per segment, because an overlay can span several segments - a lower third
-/// that survives a cut is the normal case, not an exception.
 /// </summary>
 public static class OverlayFilters
 {

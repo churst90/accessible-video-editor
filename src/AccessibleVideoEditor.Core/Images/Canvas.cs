@@ -3,21 +3,15 @@ using System.IO.Compression;
 namespace AccessibleVideoEditor.Core.Images;
 
 /// <summary>
-/// A picture being drawn on, and the drawing itself.
-///
-/// Written from scratch rather than borrowed so that <b>every operation can
-/// report what it did</b> - a flood fill that says how much of the picture it
-/// covered is a flood fill you can use without seeing it, and no drawing
-/// library offers that. It also means the whole thing is testable: a fill on a
-/// 10 by 10 canvas is an assertion, not a screenshot.
+/// A picture being drawn on. Written from scratch so every operation can report
+/// what it did - a flood fill that says how much it covered is one you can use
+/// without seeing it, and no drawing library offers that.
 /// </summary>
 public sealed class Canvas
 {
     public int Width { get; }
 
     public int Height { get; }
-
-    /// <summary>Four bytes per pixel, red green blue alpha, row major.</summary>
     public byte[] Pixels { get; }
 
     public Canvas(int width, int height)
@@ -269,7 +263,7 @@ public sealed class Canvas
         return string.Join(", ", colours.Select(c => $"{c.Share:0} percent {c.Name}"));
     }
 
-    // ---- writing it out --------------------------------------------------
+    // ---- writing it out ----------------------------------------------------
 
     /// <summary>
     /// A PNG, written by hand.

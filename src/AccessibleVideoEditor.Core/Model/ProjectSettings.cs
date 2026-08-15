@@ -55,10 +55,11 @@ public sealed class ProjectSettings
     public double StillDuration { get; set; } = 4;
 
     /// <summary>
-    /// Give inserted stills a slow push in. A still that does not move reads as
-    /// a frozen video rather than a photograph, and the drift is the difference.
+    /// Off. A slideshow, or a two-second flash of a photograph, does not want a
+    /// slow drift over it - and a still that moves when you did not ask reads
+    /// as a mistake. It is an effect you add, on Ctrl+Shift+B.
     /// </summary>
-    public bool KenBurnsByDefault { get; set; } = true;
+    public bool KenBurnsByDefault { get; set; }
 
     /// <summary>Snap selections and the cursor to boundaries, word starts and markers.</summary>
     public bool Snap { get; set; } = true;

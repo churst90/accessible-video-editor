@@ -5,21 +5,10 @@ using AccessibleVideoEditor.Core.Streaming;
 namespace AccessibleVideoEditor.Engine;
 
 /// <summary>
-/// One encode, sent to every destination at once.
-///
-/// This is the answer to "how do I stream to YouTube and Twitch at the same
-/// time": ffmpeg's <c>tee</c> muxer takes the encoded stream and writes it to
-/// several outputs without encoding it again. Encoding twice would cost twice
-/// the processor for an identical picture, and on a machine also running a
-/// camera, a screen capture and a screen reader that is not affordable.
-///
-/// The consequence is that <b>every service gets the same stream</b>, so the
-/// settings have to satisfy the strictest one - which is why
-/// <see cref="EncoderSettings.ForTargets"/> works them out from the
-/// destinations rather than letting them be typed in.
-///
-/// <c>onfail=ignore</c> on each output is deliberate: if YouTube drops, the
-/// Twitch stream carries on rather than the whole broadcast ending.
+/// One encode, sent to every destination at once through ffmpeg's tee muxer.
+/// Every service therefore gets the same picture, so the settings must satisfy
+/// the strictest of them - see <see cref="EncoderSettings.ForTargets"/>.
+/// <c>onfail=ignore</c> keeps the others alive when one drops.
 /// </summary>
 public sealed class StreamEncoder(string ffmpegPath = "ffmpeg")
 {

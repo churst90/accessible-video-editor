@@ -8,20 +8,10 @@ namespace AccessibleVideoEditor.Core.Settings;
 /// <summary>
 /// Everything that belongs to <b>you and this machine</b> rather than to one
 /// project.
-///
-/// The rule for deciding where something lives: if copying a project to another
-/// computer should carry the setting with it, it is a project setting; if it
-/// would be wrong or dangerous to carry it, it belongs here. A canvas size
-/// travels with the project. Your microphone, your stream key and how much
-/// speech you like do not.
-///
-/// <see cref="Defaults"/> is the exception that proves the rule - it holds the
-/// <i>project settings a new project starts from</i>, so "I always work at 30
-/// frames per second" is said once rather than on every project.
 /// </summary>
 public sealed class AppSettings
 {
-    // ---- who you are -----------------------------------------------------
+    // ---- who you are -------------------------------------------------------
 
     /// <summary>
     /// Used to pick your name out of chat. Nothing else reads it, and it is
@@ -30,19 +20,19 @@ public sealed class AppSettings
     /// </summary>
     public string DisplayName { get; set; } = string.Empty;
 
-    // ---- what a new project starts from ----------------------------------
+    // ---- what a new project starts from ------------------------------------
 
     public ProjectSettings Defaults { get; set; } = new();
 
-    // ---- how the application behaves -------------------------------------
+    // ---- how the application behaves ---------------------------------------
 
     public BehaviourSettings Behaviour { get; set; } = new();
 
-    // ---- devices ---------------------------------------------------------
+    // ---- devices -----------------------------------------------------------
 
     public DeviceSettings Devices { get; set; } = new();
 
-    // ---- streaming -------------------------------------------------------
+    // ---- streaming ---------------------------------------------------------
 
     /// <summary>
     /// Destinations and chat channels, <b>without their keys</b>. Keys and
@@ -52,14 +42,14 @@ public sealed class AppSettings
     /// </summary>
     public StreamSettings Streaming { get; set; } = new();
 
-    // ---- where the tools are ---------------------------------------------
+    // ---- where the tools are -----------------------------------------------
 
     public ToolPaths Tools { get; set; } = new();
 
     /// <summary>Projects opened recently, newest first.</summary>
     public List<string> Recent { get; set; } = [];
 
-    // ---- loading and saving ----------------------------------------------
+    // ---- loading and saving ------------------------------------------------
 
     public static string DirectoryPath =>
         Path.Combine(
@@ -182,6 +172,13 @@ public sealed class BehaviourSettings
     public int ChatBurst { get; set; } = 6;
 
     public double ChatBurstWindow { get; set; } = 4;
+
+    /// <summary>
+    /// Minutes between quiet saves of a project that already has a home. Zero
+    /// turns it off. It never prompts and never interrupts - a save you have to
+    /// answer is one you will start dismissing.
+    /// </summary>
+    public int AutosaveMinutes { get; set; } = 3;
 
     /// <summary>Where renders go when nothing else is said.</summary>
     public string OutputDirectory { get; set; } = string.Empty;

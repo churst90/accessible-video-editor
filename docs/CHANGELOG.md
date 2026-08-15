@@ -12,6 +12,45 @@ Newest first. Dates are when the work landed.
 
 
 
+
+## Everything the audit found
+
+### Ken Burns is off by default
+
+A slideshow, or a two-second flash of a photograph, does not want a slow drift
+over it - and a still that moves when you did not ask reads as a mistake. It is
+now an effect you add, on `Ctrl+Shift+B`.
+
+### The nine unbuilt commands are built
+
+- **Markers** - add, remove, and a list you can arrow through and press Enter to
+  go to. The model already had them and navigation already stopped on them;
+  there was no way to make one.
+- **Titles, graphics and b-roll** can now be created. They rendered and could be
+  described before, which made their absence the most misleading gap in the
+  application - a project could not contain one.
+- **Transcript search**, **the to-do list**, **read me the edit**, **the command
+  palette** and **reloading a hand-edited `edit.md`**. Markers, issues and search
+  results are the same shape, so they share one window: arrow through it, Enter
+  goes there.
+
+### Design issues from the audit
+
+- **`MainWindow` split** into two partials, 4,855 lines down to 4,390.
+- **Twelve `async void` entry points** now guard their bodies, so a failure is
+  announced instead of taking the process down.
+- **Autosave**, every three minutes, for a project that already has a home. It
+  never prompts.
+- **One raster decode** in the image editor instead of two.
+- One finding **corrected rather than fixed**: `Refresh()` on the playback tick
+  only sets label text, and only while playing. There was no per-tick rebuild.
+
+### Comments
+
+28,341 lines at 14 percent comments, down from 15 percent, and doc blocks of
+nine lines or more cut from 91 to 59. The rule applied throughout: **keep the
+reason, drop the restatement.** Section rules are one length everywhere.
+
 ## The viewfinder, project save and open, and the rename
 
 ### Renamed to Accessible Video Editor

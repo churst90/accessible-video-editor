@@ -3,21 +3,9 @@ using AccessibleVideoEditor.Core.Model;
 namespace AccessibleVideoEditor.Audio;
 
 /// <summary>
-/// Turns a framing error into a tone. The mapping is a pure function so it can
-/// be tested and tuned without a camera in the loop.
-///
-/// Three channels, chosen because they are perceptually orthogonal - you can
-/// read all three at once:
-/// <list type="bullet">
-/// <item><b>Pan</b> - horizontal offset. Double-encoded into pitch bend, because
-/// pan is unreliable on laptop speakers.</item>
-/// <item><b>Pitch</b> - vertical offset from the target eyeline.</item>
-/// <item><b>Beep tempo</b> - distance. Parking-sensor logic.</item>
-/// </list>
-///
-/// On target the tone stops. Silence-on-target is not a detail: a tone that
-/// plays for the whole take is unusable, and a "locked" chime followed by quiet
-/// is what lets you actually start talking.
+/// Turns a framing error into something to hear: panned to where you are,
+/// pitched to how far up, ticking faster as you get too close - and silent when
+/// you are framed, so you stop moving when the sound stops.
 /// </summary>
 public static class ViewfinderSonifier
 {

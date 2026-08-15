@@ -4,22 +4,10 @@ using AccessibleVideoEditor.Core.Streaming;
 namespace AccessibleVideoEditor.Core.Settings;
 
 /// <summary>
-/// Stream keys and access tokens, kept apart from everything else.
-///
-/// A separate file for three reasons, all of them practical:
-///
-/// <list type="bullet">
-/// <item>It can be given <b>owner-only permissions</b>; the settings file does
-/// not need them and would lose them the first time something rewrote it.</item>
-/// <item>Settings can be copied, shared or pasted into a bug report without
-/// handing over your broadcast. A stream key lets anyone stream as you.</item>
-/// <item>Backing up your configuration and backing up your credentials are
-/// different decisions, and keeping them in one file forces them to be the
-/// same one.</item>
-/// </list>
-///
-/// Nothing in here is ever spoken, written to a status line, or put in a log -
-/// only <i>whether</i> a secret is set.
+/// Stream keys and access tokens, in their own file with owner-only
+/// permissions. Settings get copied, shared and pasted into bug reports; a
+/// stream key lets anyone broadcast as you, so the two cannot share a file.
+/// Nothing here is ever spoken - only whether a secret is set.
 /// </summary>
 public sealed class SecretStore
 {
@@ -105,7 +93,7 @@ public sealed class SecretStore
     /// <summary>The names of the secrets that are set. Names only, never values.</summary>
     public IReadOnlyCollection<string> Names => _values.Keys;
 
-    // ---- the things that are actually stored ------------------------------
+    // ---- the things that are actually stored -------------------------------
 
     public string StreamKey(StreamPlatform platform) => Get(KeyFor(platform));
 

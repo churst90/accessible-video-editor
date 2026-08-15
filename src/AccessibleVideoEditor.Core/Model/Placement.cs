@@ -3,18 +3,6 @@ namespace AccessibleVideoEditor.Core.Model;
 /// <summary>
 /// Where a graphic or title sits on the canvas, expressed as a numpad cell
 /// rather than coordinates.
-///
-/// <code>
-///   7 8 9      top-left    top     top-right
-///   4 5 6      left        centre  right
-///   1 2 3      bottom-left bottom  bottom-right
-/// </code>
-///
-/// 3x3 rather than 4x4 deliberately: an even grid has no centre cell, and 3x3
-/// is the rule-of-thirds grid that video composition already uses. Precision
-/// comes from <see cref="SubCell"/> - pressing a second numpad key selects a
-/// cell within the cell, giving 81 addressable positions from two keystrokes -
-/// and then from <see cref="NudgeX"/>/<see cref="NudgeY"/> in 1% steps.
 /// </summary>
 public readonly record struct Placement(int Cell = 5, int SubCell = 0, double NudgeX = 0, double NudgeY = 0)
 {

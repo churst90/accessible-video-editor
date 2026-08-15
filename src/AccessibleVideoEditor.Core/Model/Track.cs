@@ -3,10 +3,6 @@ namespace AccessibleVideoEditor.Core.Model;
 /// <summary>
 /// Tracks are the vertical axis of the scrubber: Up/Down moves focus between
 /// them, Left/Right moves along the focused one.
-///
-/// A track is a lane and a routing target, not a container of absolute-timed
-/// clips. The <see cref="TrackKind.Programme"/> track renders the spine; every
-/// other track renders overlay items anchored to it.
 /// </summary>
 public sealed class Track
 {

@@ -6,9 +6,6 @@ namespace AccessibleVideoEditor.Core.Timeline;
 /// How far Left/Right moves. Up/Down changes track, so granularity lives on
 /// Ctrl+Up/Ctrl+Down - the mental model being "vertical changes something,
 /// Ctrl changes the ruler".
-///
-/// This is structural navigation, the same idea as Orca's navigation levels,
-/// rather than a pixel-denominated slider.
 /// </summary>
 public enum Granularity
 {

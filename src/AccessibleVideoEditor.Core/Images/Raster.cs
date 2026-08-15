@@ -17,8 +17,6 @@ public sealed class Raster(int width, int height, byte[] pixels)
     public int Width { get; } = width;
 
     public int Height { get; } = height;
-
-    /// <summary>One byte per pixel, row major. 0 is black, 255 is white.</summary>
     public byte[] Pixels { get; } = pixels;
 
     public byte At(int x, int y) =>

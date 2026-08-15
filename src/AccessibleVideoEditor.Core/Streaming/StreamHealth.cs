@@ -3,16 +3,6 @@ namespace AccessibleVideoEditor.Core.Streaming;
 /// <summary>
 /// Whether the stream is actually all right, from what the encoder says about
 /// itself.
-///
-/// Every streaming application shows this as a graph, which is no use here. The
-/// facts that matter are few and each one is a yes or no: are frames being
-/// dropped, is the encoder keeping up, and is it still connected. Those become
-/// <b>earcons</b> - you learn three sounds once and then never have to go and
-/// look.
-///
-/// The parsing is separated from the process so it can be tested against real
-/// ffmpeg output, which is the only way to be sure a warning fires when it
-/// should rather than only when someone remembers to check.
 /// </summary>
 public static class StreamHealth
 {

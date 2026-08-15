@@ -6,11 +6,6 @@ namespace AccessibleVideoEditor.Engine;
 /// <summary>
 /// Bringing a file into a project: probe it, classify it, name its audio
 /// tracks, and report what was found.
-///
-/// The report is the point. Importing silently is fine when you can see a
-/// thumbnail appear; here the import has to say what it got - resolution,
-/// length, how many audio tracks and what they are - because that is the only
-/// chance to notice you grabbed the wrong take.
 /// </summary>
 public sealed class MediaImporter(FfmpegProbe? probe = null)
 {

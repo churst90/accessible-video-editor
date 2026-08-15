@@ -3,22 +3,12 @@ namespace AccessibleVideoEditor.Core.Commands;
 /// <summary>
 /// Every action the application can perform, with its default binding and
 /// <b>where that binding comes from</b>.
-///
-/// <see cref="KeyOrigin"/> is recorded for every command on purpose. A keymap
-/// that is half industry convention and half invention is fine - but only if
-/// you can tell which is which. Anything marked <see cref="KeyOrigin.Invented"/>
-/// has no precedent and is a candidate for change; anything marked
-/// <see cref="KeyOrigin.Premiere"/> should not be changed without a reason,
-/// because muscle memory from a real editor is worth more than our taste.
-///
-/// Deliberate deviations from Premiere are marked
-/// <see cref="KeyOrigin.DeviatesFromPremiere"/> and each one states why.
 /// </summary>
 public static class CommandRegistry
 {
     public static IReadOnlyList<CommandDefinition> All { get; } =
     [
-        // ---- file --------------------------------------------------------
+        // ---- file --------------------------------------------------------------
         new("file.recent", "Recent projects", "Ctrl+Shift+O", CommandGroup.File, KeyOrigin.Universal),
         new("file.new", "New project", "Ctrl+N", CommandGroup.File, KeyOrigin.Universal),
         new("file.open", "Open project", "Ctrl+O", CommandGroup.File, KeyOrigin.Universal),
@@ -31,7 +21,7 @@ public static class CommandRegistry
             "Reconciles a hand edit made in pluma, keeping element IDs intact."),
         new("file.exit", "Exit", "Ctrl+Q", CommandGroup.File, KeyOrigin.Universal),
 
-        // ---- application -------------------------------------------------
+        // ---- application -------------------------------------------------------
         new("view.byNumber", "Go to a view", "Ctrl+1 to Ctrl+6", CommandGroup.Application, KeyOrigin.CodeEditor,
             "Timeline, tracks, transcript, media bin, stream, images."),
         new("cursor.nextEdit", "Next edit point, any track", "Tab", CommandGroup.Navigation, KeyOrigin.Reaper,
@@ -46,7 +36,7 @@ public static class CommandRegistry
             "Also Shift+F10. Contents depend on what is focused.", Alternate: "Shift+F10"),
         new("speech.verbosity", "Cycle verbosity", "Ctrl+Alt+V", CommandGroup.Application, KeyOrigin.Invented),
 
-        // ---- function keys ----------------------------------------------
+        // ---- function keys -----------------------------------------------------
         // One domain per key, stacked: plain does the common thing, Shift the
         // variant, Ctrl the setup. Guessable rather than memorised.
         new("help.context", "What can I do here", "F1", CommandGroup.Application, KeyOrigin.Universal,
@@ -112,7 +102,7 @@ public static class CommandRegistry
         new("cursor.where", "Where am I", "F12", CommandGroup.Navigation, KeyOrigin.Invented,
             "Full readout: view, track, segment, time, state.", Alternate: "Ctrl+Semicolon"),
 
-        // ---- moving ------------------------------------------------------
+        // ---- moving ------------------------------------------------------------
         new("cursor.left", "Move back one step", "Left", CommandGroup.Navigation, KeyOrigin.Universal,
             Context: CommandContext.Timeline),
         new("cursor.right", "Move forward one step", "Right", CommandGroup.Navigation, KeyOrigin.Universal,
@@ -138,7 +128,7 @@ public static class CommandRegistry
         new("cursor.start", "Go to start", "Home", CommandGroup.Navigation, KeyOrigin.Universal),
         new("cursor.end", "Go to end", "End", CommandGroup.Navigation, KeyOrigin.Universal),
 
-        // ---- playback ----------------------------------------------------
+        // ---- playback ----------------------------------------------------------
         new("play.toggle", "Play or pause", "Space", CommandGroup.Playback, KeyOrigin.Universal),
         new("play.rewind", "Shuttle back", "J", CommandGroup.Playback, KeyOrigin.UniversalNle,
             "J K L is the shuttle on every editor and every tape deck before them.",
@@ -151,7 +141,7 @@ public static class CommandRegistry
             "Plays a second and a half either side. How you check a cut or a transition."),
         new("play.loopSelection", "Loop the selection", "Shift+Space", CommandGroup.Playback, KeyOrigin.Reaper),
 
-        // ---- selection ---------------------------------------------------
+        // ---- selection ---------------------------------------------------------
         new("select.in", "Mark in", "I", CommandGroup.Selection, KeyOrigin.UniversalNle,
             Alternate: "BracketLeft"),
         new("select.out", "Mark out", "O", CommandGroup.Selection, KeyOrigin.UniversalNle,
@@ -161,13 +151,13 @@ public static class CommandRegistry
         new("select.segment", "Select the segment under the cursor", "Ctrl+A", CommandGroup.Selection, KeyOrigin.Universal),
         new("select.track", "Select everything on this track", "Ctrl+Shift+A", CommandGroup.Selection, KeyOrigin.Invented),
 
-        // ---- assembling --------------------------------------------------
+        // ---- assembling --------------------------------------------------------
         new("edit.insert", "Insert at cursor", "Comma", CommandGroup.Editing, KeyOrigin.Premiere,
             "Ripples the source selection in at the cursor. Premiere's Insert."),
         new("edit.overwrite", "Overwrite at cursor", "Period", CommandGroup.Editing, KeyOrigin.Premiere,
             "Replaces what is there without changing timing. Premiere's Overwrite."),
 
-        // ---- editing -----------------------------------------------------
+        // ---- editing -----------------------------------------------------------
         new("edit.split", "Split at cursor", "S", CommandGroup.Editing, KeyOrigin.Reaper,
             "Reaper's split. Premiere's Ctrl+K also works.",
             Alternate: "Ctrl+K", Context: CommandContext.Timeline),
@@ -234,7 +224,7 @@ public static class CommandRegistry
             Context: CommandContext.Timeline),
         new("edit.captions", "Toggle caption on this element", "Ctrl+Shift+C", CommandGroup.Editing, KeyOrigin.Invented),
 
-        // ---- tracks (Tracks pane; plain letters are safe there) -----------
+        // ---- tracks (Tracks pane; plain letters are safe there) ----------------
         new("track.mute", "Mute or unmute", "M", CommandGroup.Tracks, KeyOrigin.UniversalNle,
             "M on a track header is mute in every DAW.", Context: CommandContext.Tracks),
         new("track.solo", "Solo or unsolo", "S", CommandGroup.Tracks, KeyOrigin.UniversalNle,
@@ -253,7 +243,7 @@ public static class CommandRegistry
             + "thing is a track, so there is no ambiguity with deleting content. "
             + "Confirms first.", Context: CommandContext.Tracks),
 
-        // ---- overlays and cards ------------------------------------------
+        // ---- overlays and cards ------------------------------------------------
         new("overlay.title", "Add a lower third", "Ctrl+Shift+L", CommandGroup.Overlays, KeyOrigin.Invented,
             "A card with a transparent background, over the video."),
         new("cleanup.fillers", "Remove filler words", "Ctrl+Alt+F", CommandGroup.Editing,
@@ -313,18 +303,30 @@ public static class CommandRegistry
             + "bed goes under a voice: by deciding it.",
             Context: CommandContext.Timeline | CommandContext.Tracks),
 
-        // ---- review and capture ------------------------------------------
+        // ---- review and capture ------------------------------------------------
 
-        // ---- output ------------------------------------------------------
+        // ---- output ------------------------------------------------------------
 
-        // ---- workflows ---------------------------------------------------
+        // ---- workflows ---------------------------------------------------------
         // Moved off Ctrl+Shift+K: that is VS Code's delete-line, which the
         // transcript has better claim to. Workflows are found by name in the
         // palette anyway.
         new("workflow.run", "Run a workflow", "Ctrl+Alt+K", CommandGroup.Workflows, KeyOrigin.Invented),
         new("workflow.record", "Record a workflow", "Ctrl+Alt+Shift+K", CommandGroup.Workflows, KeyOrigin.Invented),
 
-        // ---- streaming ---------------------------------------------------
+        // ---- markers -------------------------------------------------------
+        new("marker.remove", "Remove the marker here", "Shift+M", CommandGroup.Editing,
+            KeyOrigin.Invented, Context: CommandContext.Editing),
+        new("marker.list", "List the markers", "Ctrl+M", CommandGroup.Navigation, KeyOrigin.Invented,
+            "Enter goes there.", Context: CommandContext.Editing),
+        new("review.describe", "Read me the edit", "Ctrl+Alt+D", CommandGroup.Review,
+            KeyOrigin.Invented,
+            "How long, what is on it, and what still needs doing.",
+            Context: CommandContext.Global),
+        new("transcript.find", "Find in the transcript", "Ctrl+F", CommandGroup.Navigation,
+            KeyOrigin.Universal, Context: CommandContext.Global),
+
+        // ---- streaming ---------------------------------------------------------
         // Single letters, which nothing else in the application does. While you
         // are live you are also talking; a chord is a chord you will fumble on
         // air. They are safe because the only text entry in this view is the
@@ -379,7 +381,7 @@ public static class CommandRegistry
             + "feels it the instant it happens.",
             Context: CommandContext.Stream),
 
-        // ---- chat, per platform ------------------------------------------
+        // ---- chat, per platform ------------------------------------------------
         new("stream.youtube", "Connect YouTube chat", "Y", CommandGroup.Streaming, KeyOrigin.Invented,
             "Needs an API key and the live video's id. Reading is all an API key buys; "
             + "posting and moderating need signing in.",
@@ -396,7 +398,7 @@ public static class CommandRegistry
             "Names only. No key or token is ever read back.",
             Context: CommandContext.Stream),
 
-        // ---- moderation ---------------------------------------------------
+        // ---- moderation --------------------------------------------------------
         new("stream.deleteMessage", "Delete this message", "D", CommandGroup.Streaming, KeyOrigin.Invented,
             "Facebook hides rather than deletes, and says so.",
             Context: CommandContext.Stream),
@@ -412,7 +414,7 @@ public static class CommandRegistry
         new("stream.announce", "Announce this in chat", "Ctrl+Shift+P", CommandGroup.Streaming,
             KeyOrigin.Invented, "Twitch only.", Context: CommandContext.Stream),
 
-        // ---- music ---------------------------------------------------------
+        // ---- music -------------------------------------------------------------
         new("stream.music", "Play the playlist", "Space", CommandGroup.Streaming, KeyOrigin.Universal,
             "Plays on this machine. It reaches the stream through a desktop-audio "
             + "source, and the application says so if there is not one.",
@@ -426,7 +428,7 @@ public static class CommandRegistry
         new("stream.addMusic", "Add music to the playlist", "Shift+A", CommandGroup.Streaming,
             KeyOrigin.Invented, Context: CommandContext.Stream),
 
-        // ---- how it is going -----------------------------------------------
+        // ---- how it is going ---------------------------------------------------
         new("stream.health", "How is the stream doing", "H", CommandGroup.Streaming, KeyOrigin.Invented,
             "Bitrate, frame rate, dropped frames. Dropping and recovering are also "
             + "earcons, so you do not have to ask.",
@@ -435,7 +437,7 @@ public static class CommandRegistry
             "The same audible meter as the track editor, on the same key.",
             Context: CommandContext.Stream),
 
-        // ---- pictures ------------------------------------------------------
+        // ---- pictures ----------------------------------------------------------
         // No pointer to emulate. Every operation names what it acts on and
         // reports what it did, which is the only way a picture can be edited
         // by someone who cannot see it.
@@ -500,7 +502,7 @@ public static class CommandRegistry
             + "about to do what you think.",
             Context: CommandContext.Images),
 
-        // ---- the pointer you can hear --------------------------------------
+        // ---- the pointer you can hear ------------------------------------------
         new("image.sweep", "Sweep the picture", "G", CommandGroup.Images, KeyOrigin.Invented,
             "The arrows move a pointer instead of resizing. It is panned to where it "
             + "is and pitched to how far up - the viewfinder's vocabulary, already learnt. "
@@ -508,7 +510,7 @@ public static class CommandRegistry
             + "change the step, Escape leaves.",
             Context: CommandContext.Images),
 
-        // ---- colour ---------------------------------------------------------
+        // ---- colour ------------------------------------------------------------
         new("image.correct", "Correct the colour", "V", CommandGroup.Images, KeyOrigin.Invented,
             "Brighter, warmer, punchier - the sentences people actually say about a "
             + "photograph. Each is a nudge, said back in stops and kelvin.",
@@ -519,7 +521,7 @@ public static class CommandRegistry
             + "corrections are called.",
             Context: CommandContext.Images),
 
-        // ---- shared with the video ------------------------------------------
+        // ---- shared with the video ---------------------------------------------
         new("image.card", "Put a card on it", "Shift+A", CommandGroup.Images, KeyOrigin.Invented,
             "The video editor's own card, edited by the same editor. A lower third over "
             + "a photograph is the same object as one over a clip.",
@@ -672,9 +674,6 @@ public enum KeyOrigin
 /// more than one place and a single-context model forces false choices - Delete
 /// has to mean ripple-delete in both the timeline and the transcript, while
 /// meaning delete-this-track in the Tracks pane.
-///
-/// This is also what lets a plain letter be reused safely: M is mute on a track
-/// header and marker on the timeline, and those panes never overlap.
 /// </summary>
 [Flags]
 public enum CommandContext

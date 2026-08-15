@@ -8,12 +8,6 @@ namespace AccessibleVideoEditor.Playback;
 /// <summary>
 /// Builds an mpv <c>edl://</c> playlist from the timeline, together with the
 /// map between programme time and playback time.
-///
-/// The map is the important half. An EDL can only contain real media, but a
-/// programme also contains cards, holes and pauses - segments that occupy time
-/// and have nothing to play. Without a translation the two clocks drift apart
-/// by the length of every such segment, and every seek lands somewhere else
-/// than the cursor said.
 /// </summary>
 public static class MpvEdl
 {

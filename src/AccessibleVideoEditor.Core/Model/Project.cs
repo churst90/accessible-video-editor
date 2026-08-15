@@ -6,9 +6,6 @@ namespace AccessibleVideoEditor.Core.Model;
 /// The canonical project document. JSON on disk; <c>edit.md</c> is an export
 /// that round-trips back in, so the CLI, pluma and the Claude skill all keep
 /// working.
-///
-/// Shape: <b>one ordered spine plus anchored overlays</b>. The spine defines
-/// programme time; everything else names a spine element and an offset.
 /// </summary>
 public sealed class Project
 {
