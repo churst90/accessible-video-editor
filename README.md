@@ -12,9 +12,9 @@ it.
 
 ## Status
 
-**Version 0.16.0.** The minor number is the highest roadmap phase built, so it
+**Version 0.17.0.** The minor number is the highest roadmap phase built, so it
 says how far through the plan this is rather than being a number that goes up.
-All sixteen phases are built; 796 tests.
+All seventeen phases are built; 843 tests.
 
 It is deliberately **not 1.0**, and the deciding reason is not a missing
 feature: no whole video has been cut and published with it yet, and that is the
@@ -32,8 +32,9 @@ stills and Ken Burns; the drawn timeline with waveforms; the streamer view with
 scenes, sources, multi-destination streaming and chat on Twitch, YouTube and
 Facebook; the image editor, including scanner-bed detection and drawing by
 description; subclips and segment groups; audio effects with measure-then-advise;
-volume over time as named shapes; multicam sync and switching; and export
-presets that say what they will crop before they run.
+volume over time as named shapes; multicam sync and switching; export presets
+that say what they will crop before they run; the preferences window; and shot
+descriptions, so the footage itself says what is on screen.
 
 **Every command in the registry is wired**, and a test keeps it that way by
 reading the interface sources and checking that every menu item reaches a
@@ -47,8 +48,10 @@ along with an honest grade of the codebase.
 
 A **Windows or Mac client** would be a second front end over the same Core - GTK
 stays the Linux one. The options and the recommendation are in
-[docs/CLIENTS.md](docs/CLIENTS.md); nothing is built yet, and nothing will be
-until a scrubber spike has been read by NVDA.
+[docs/CLIENTS.md](docs/CLIENTS.md). **The deciding spike is written** -
+`spikes/AccessibleVideoEditor.WpfSpike`, a drawn four-track scrubber with an
+`AutomationPeer` tree and an announcer with real priorities - and it has never
+been run. Nothing else gets built until NVDA and JAWS have read it.
 
 See [docs/MANUAL.md](docs/MANUAL.md) for how it works,
 [docs/AUDIT.md](docs/AUDIT.md) for an honest state of the codebase,
@@ -81,6 +84,7 @@ Keys:
 | Key | Action | |
 |---|---|---|
 | `Ctrl+1`–`Ctrl+6` | Go to a view | timeline, tracks, transcript, media, stream, images |
+| `Ctrl+,` | Preferences | speech, saving, new-project defaults, devices, tools |
 | `F6` / `Shift+F6` | Next / previous view | |
 | `Tab` / `Shift+Tab` | Next / previous edit point on any track | Reaper's transient key |
 | `Up` / `Down` | Move between rows — tracks | native list navigation |
@@ -97,6 +101,9 @@ Keys:
 | `Ctrl+Z` | Undo | |
 | `F12` | Where am I | also `Ctrl+;` |
 | `F1` / `F2` / `F5` | Help / render / arm track | Shift and Ctrl stack each key |
+| `F8` / `Ctrl+F8` | Describe this frame / describe every shot in this take | |
+| `Ctrl+Shift+Left/Right` | Previous / next shot change | a cut you cannot otherwise find |
+| `Ctrl+Shift+R` | Revert to the last save | autosave writes beside the project, not over it |
 | `Ctrl+T` | New track | |
 | `Ctrl+C` / `Ctrl+X` / `Ctrl+V` | Copy, cut, paste — including between tracks | |
 | `Applications` / `Shift+F10` | Context menu, varies by view | |

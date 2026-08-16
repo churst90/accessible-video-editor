@@ -16,7 +16,7 @@ public static class AboutInfo
     /// It stays below 1.0 until the criteria in ROADMAP.md are met - the
     /// deciding one being that a whole video has been cut and published with it.
     /// </summary>
-    public const string Version = "0.16.0";
+    public const string Version = "0.17.0";
 
     public const string Tagline =
         "A video editor where a blind editor is the primary user, not an afterthought.";

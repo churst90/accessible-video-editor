@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Deliberately outside AccessibleVideoEditor.slnx.
+
+    WPF only builds on Windows, and the Linux client is the one that has to
+    keep building on Cody's machine. A `dotnet build` at the root must not
+    start failing because a Windows spike exists, so this is opened on its own.
+  -->
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AssemblyName>AccessibleVideoEditor.WpfSpike</AssemblyName>
+    <RootNamespace>AccessibleVideoEditor.WpfSpike</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!--
+      Core only. The point of the spike is that the model, the layout and every
+      announcement string come across untouched; if this needed anything else,
+      that would itself be a finding.
+    -->
+    <ProjectReference Include="..\..\src\AccessibleVideoEditor.Core\AccessibleVideoEditor.Core.csproj" />
+  </ItemGroup>
+
+</Project>

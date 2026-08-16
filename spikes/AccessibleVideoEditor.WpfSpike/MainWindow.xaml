@@ -1,0 +1,46 @@
+<Window x:Class="AccessibleVideoEditor.WpfSpike.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Accessible Video Editor - Windows scrubber spike"
+        Height="620" Width="1100"
+        Background="#14161a">
+
+    <!--
+        Layout only, and barely that. The status line is above the canvas
+        because it is above it in the Linux client, and a sighted collaborator
+        reading over your shoulder should find the same thing in the same place.
+    -->
+
+    <DockPanel Margin="12">
+
+        <TextBlock x:Name="Instructions"
+                   DockPanel.Dock="Top"
+                   Foreground="#b8c0cc"
+                   FontFamily="Segoe UI"
+                   FontSize="13"
+                   TextWrapping="Wrap"
+                   Margin="0,0,0,10"
+                   AutomationProperties.Name="What to try"
+                   Text="Arrows move and change track. Home and End. Minus and Equals change the step. F12 says where you are. E raises an urgent message - hold Right and press E to hear whether it interrupts." />
+
+        <Border x:Name="StatusSurface"
+                DockPanel.Dock="Bottom"
+                Background="#1a1e26"
+                CornerRadius="6"
+                Padding="10,8"
+                Margin="0,10,0,0">
+            <TextBlock x:Name="Status"
+                       Foreground="#f0f4f8"
+                       FontFamily="Cascadia Mono, Consolas"
+                       FontSize="14"
+                       AutomationProperties.Name="Status"
+                       AutomationProperties.LiveSetting="Polite"
+                       Text="" />
+        </Border>
+
+        <Border BorderBrush="#3a404a" BorderThickness="1" CornerRadius="6">
+            <ContentControl x:Name="CanvasHost" Focusable="False" />
+        </Border>
+
+    </DockPanel>
+</Window>

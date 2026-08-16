@@ -24,6 +24,15 @@ key must not.
 
 `XDG_CONFIG_HOME` is honoured if it is set.
 
+**`Ctrl+,` edits the application settings** without opening the file. Everything
+except the secrets: those are set in the streamer view and are never read back
+anywhere, which a settings window that could show them would undo.
+
+A project folder also holds **`project.autosave.json`** — the quiet save, beside
+the project rather than over it, so `project.json` stays the state you last
+chose. It is deleted on every explicit save, and offered on open when it is
+newer. See the manual's section 11.
+
 ### Why secrets are a separate file
 
 Three practical reasons, not one theoretical one:

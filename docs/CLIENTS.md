@@ -4,9 +4,21 @@
 here proposes replacing it. This is about a *second* head, for Windows and
 possibly macOS, over the same Core.
 
-Nothing has been built yet. This is the decision written down before the work,
-because the last time a toolkit was chosen the choice was wrong and three weeks
-of front end went in the bin.
+This is the decision written down before the work, because the last time a
+toolkit was chosen the choice was wrong and three weeks of front end went in the
+bin.
+
+> **Status: the spike is written and has never been run.**
+> `spikes/AccessibleVideoEditor.WpfSpike` - a four-track drawn scrubber with an
+> `AutomationPeer` tree and an announcer at three priorities, referencing `Core`
+> and nothing else. It compiles on Linux via
+> `dotnet build -p:EnableWindowsTargeting=true`, cleanly, which proves it is
+> valid against the real WPF API and proves nothing whatever about whether a
+> screen reader can read it.
+>
+> Its README is the test script, in order. **Record the result here**, with the
+> NVDA and JAWS versions - a spike whose answer lives only in someone's memory
+> has to be run again.
 
 ---
 

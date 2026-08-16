@@ -517,9 +517,11 @@ Arm a track, then:
 microphone names from `pactl`, so browsing what is available cannot switch on a
 webcam light. Only recording touches hardware, and only when you ask for it.
 
-`Ctrl+5` shows the record view: cameras, microphones and system-audio sources
-with the names you would recognise — "Arctis Nova Pro Wireless Mono", not
-"alsa_input.pci-0000_c1_00.6.HiFi__Mic1__source".
+`Ctrl+F5` lists the inputs for the focused track: cameras, microphones and
+system-audio sources with the names you would recognise — "Arctis Nova Pro
+Wireless Mono", not "alsa_input.pci-0000_c1_00.6.HiFi__Mic1__source". There is
+**no record view** — the input is a property of the track, so choosing it
+happens in the track editor. `Ctrl+5` is the streamer view.
 
 `AccessibleVideoEditor.Cli devices` prints the same list headlessly.
 
@@ -1018,6 +1020,7 @@ tones. It finds a face; it does not identify one.
 |---|---|
 | `Ctrl+N` / `Ctrl+O` | New project / open one |
 | `Ctrl+S` / `Ctrl+Shift+S` | Save / save somewhere else |
+| `Ctrl+Shift+R` | Revert to the last save |
 | `Ctrl+Shift+O` | Recent projects |
 
 A project is a folder with a `project.json` in it. Saving writes to a temporary
@@ -1026,6 +1029,126 @@ file and moves it, so a crash mid-save cannot leave you with half a project.
 Every edit marks the project unsaved. Opening another one or starting a new one
 asks first, and **No has the focus** — it is the answer you get by pressing
 Enter without having listened.
+
+### Autosave, and getting back
+
+Every few minutes a project that already has a home is saved quietly — **beside
+itself**, to `project.autosave.json`, never over `project.json`. That one
+detail is what makes two things possible:
+
+- **`Ctrl+Shift+R` reverts to the last save.** Try an idea for half an hour,
+  decide against it, and there is still a deliberate save to go back to. It
+  asks first.
+- **Opening a project after a crash offers the recovered work**, saying how
+  much newer it is: *"open the recovered work, 12 minutes newer than the last
+  save? Choosing no opens the saved project and leaves the recovery alone."*
+  Recovered work opens **unsaved**, because it is not in the project file yet
+  and closing it again without a prompt is exactly the mistake to avoid.
+
+Saving deletes the recovery file, so it can never offer to replace good work
+with something older. An autosave that fails says so **once**, not every few
+minutes — a warning that repeats is one you stop hearing.
+
+How often it runs is in Preferences; zero turns it off.
+
+---
+
+## 11d. Preferences — `Ctrl+,` **[built]**
+
+Everything that used to mean editing `~/.config/video/settings.json` by hand.
+
+It is the one window in this application built out of ordinary form controls
+rather than lists and spoken verbs, and that is deliberate. Everywhere else a
+visual control is replaced because no accessible equivalent exists; a checkbox
+has no such problem. GTK's own widgets carry their role, their state and their
+label into the accessibility tree, so a check button announces *"earcons,
+checked"* without the application saying a word — and inventing a spoken list
+here would mean re-implementing, worse, something the toolkit already does
+properly. Each section is a titled frame, which Orca announces on entry, and
+every field has a label joined to its control so focusing the control reads the
+label.
+
+Six groups: **speech** (how much is said, earcons, follow playback, your name),
+**saving and output** (autosave interval, where renders go), **what a new
+project starts from** (canvas, frame rate, snapping, ripple, scrub, still
+duration, loudness target), **devices**, **chat** and **where the tools are**.
+
+Two things it does that a preferences window usually does not:
+
+- **Saving says what changed**, not that it saved: *"settings saved. Speech is
+  verbose, and autosave is off."* Hearing nothing after pressing Save is
+  indistinguishable from a save that failed. A save that changed nothing says
+  so.
+- **Values that would fail somewhere else are corrected here, out loud.** A
+  frame rate of zero is accepted by a spin button and rejected by ffmpeg an hour
+  later, at render time, in a message about a filtergraph. An odd canvas width
+  cannot be encoded at all. Those are caught on save and said: *"the canvas is
+  now 1920 by 1080, because video cannot be an odd number of pixels."*
+
+**Stream keys are not here.** They are set in the streamer view, they live in a
+separate file with tighter permissions, and a settings window that could read
+one back would undo the point of that.
+
+The defaults section really does reach new projects, and the device defaults
+really are used — a track armed with no input of its own takes the preferred
+one and says *"from preferences"*, so you can tell a default from a choice.
+
+---
+
+## 11e. What is on screen — `Ctrl+F8` **[built]**
+
+Cards and transitions announce themselves because the document knows what they
+are. A shot of footage is the one thing on the timeline the document knows
+nothing about: it is a rectangle of pixels, and only something with eyes can say
+what is in it.
+
+`Ctrl+F8` closes that gap for the take under the cursor. It finds where the
+picture changes, has each shot described once, and caches the answers — after
+which moving the cursor says what is on screen **when it changes**, at the same
+speed as everything else.
+
+| Key | Action |
+|---|---|
+| `Ctrl+F8` | Describe every shot in the take under the cursor |
+| `Ctrl+Alt+F8` | The whole description of the shot you are in |
+| `Ctrl+Shift+Left` / `Ctrl+Shift+Right` | Previous / next shot change |
+| `F8` | Still describes the exact frame at the cursor, live |
+
+**Why shots and not frames.** Sampling every few seconds would describe the same
+shot forty times, at forty times the cost, in slightly different words each
+time — so moving inside one unchanging shot would make the description flicker,
+which reads as the picture changing when it has not. A shot is the unit that has
+an identity. One description, and every position inside it gives the same
+answer.
+
+**Why it is not asked live.** Describing a frame takes seconds; moving the
+cursor takes milliseconds. A description fetched as you navigate would arrive
+attached to a position you left several presses ago, and a description of the
+wrong moment is worse than none — it is the one error you cannot detect without
+sight.
+
+**What it says, and when.** Moving inside a shot is silent. Crossing into
+another one adds a short label to the usual readout — *"0:12.4, blank, the
+keyboard, close"* — the same boundary-crossing rule transitions already follow,
+because four sentences on every arrow press would make the timeline unusable.
+`Ctrl+Alt+F8` gives the full description on demand. Returning to a shot that
+looks the same as an earlier one still announces, because a cut back to the wide
+is still a cut.
+
+**`Ctrl+Shift+Right` is the part that changes what you can do.** A cut inside a
+take is invisible and, until now, unfindable — you could only guess where the
+angle changed. This lands the cursor on the change itself, which is exactly
+where a marker wants to go.
+
+**What it costs, and that it is asked for.** Each shot is one call to Claude
+through the `claude` command, so a twenty-minute take is tens of them and
+minutes of waiting. It never runs by itself: it says how many shots it found
+*before* it starts, counts as it goes, and caches the result keyed by the file's
+size and modification time — so the same footage is never described twice, and
+re-importing an edited file describes it again.
+
+A shot that could not be described still gets a label — its timecode — because a
+blank announcement at a boundary reads as a missed keypress.
 
 ---
 

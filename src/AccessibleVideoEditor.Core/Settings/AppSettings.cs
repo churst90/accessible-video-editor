@@ -86,6 +86,17 @@ public sealed class AppSettings
         }
     }
 
+    /// <summary>
+    /// A detached copy, for holding what the settings were before a dialog
+    /// edited them - which is what lets the save say what actually changed
+    /// rather than merely that it saved.
+    ///
+    /// Through the serialiser rather than by hand: a copy method that has to be
+    /// remembered when a setting is added is a copy method that will be wrong.
+    /// </summary>
+    public AppSettings Copy() =>
+        JsonSerializer.Deserialize<AppSettings>(JsonSerializer.Serialize(this, Json), Json)!;
+
     public string Save(string? path = null)
     {
         var file = path ?? FilePath;

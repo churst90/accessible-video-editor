@@ -343,45 +343,80 @@ public sealed partial class MainWindow
         Action("open", OpenProject);
         Action("save", () => _ = SaveProject(saveAs: false));
         Action("saveAs", () => _ = SaveProject(saveAs: true));
+        Action("revert", RevertToSaved);
         Action("recent", OpenRecent);
     }
 
     private void NewProject() => WithUnsavedWork(() =>
         Prompt("Name for the new project", "Untitled", "Create", name =>
         {
-            LoadInto(Project.CreateDefault(name));
+            var project = Project.CreateDefault(name);
+
+            // The preferences window's "what a new project starts from" section
+            // arrives here. Without this the defaults were stored, saved and
+            // read by nothing at all.
+            Preferences.ApplyDefaults(_settings, project);
+
+            LoadInto(project);
 
             _dirty = true;
-            Announce($"{name}. Nothing is on disk until you save it with Control S", urgent: true);
+            Announce(
+                $"{name}, {project.Settings.CanvasWidth} by {project.Settings.CanvasHeight}. "
+                + "Nothing is on disk until you save it with Control S",
+                urgent: true);
         }));
 
     private void OpenProject() => WithUnsavedWork(() =>
-        Prompt("Project folder", LastFolder(), "Open", async path =>
+        Prompt("Project folder", LastFolder(), "Open", path =>
         {
-            if (!File.Exists(System.IO.Path.Combine(path, "project.json")))
+            var recovery = RecoveryFile.Check(path);
+
+            if (!File.Exists(System.IO.Path.Combine(path, "project.json")) && !recovery.Available)
             {
                 Announce("there is no project in that folder", urgent: true);
                 return;
             }
 
-            try
+            // The recovery question is asked before the project is opened, not
+            // after, so answering it is a choice rather than an undo.
+            if (recovery.Available)
             {
-                var project = await ProjectJson.LoadAsync(path).ConfigureAwait(true);
+                ConfirmThen(
+                    recovery.Question(),
+                    () => _ = OpenFrom(path, RecoveryFile.PathFor(path), recovered: true),
+                    otherwise: () => _ = OpenFrom(path, RecoveryFile.ProjectPathFor(path), recovered: false));
 
-                LoadInto(project);
-                Remember(path);
-
-                _dirty = false;
-
-                Announce(
-                    $"{project.Name}. {project.Spine.Count} segments, "
-                    + $"{Timecode.Speak(_session.Map.Duration)}", urgent: true);
+                return;
             }
-            catch (Exception exception)
-            {
-                Announce($"could not open it: {exception.Message}", urgent: true);
-            }
+
+            _ = OpenFrom(path, RecoveryFile.ProjectPathFor(path), recovered: false);
         }));
+
+    private async Task OpenFrom(string folder, string file, bool recovered)
+    {
+        try
+        {
+            var project = await ProjectJson.LoadFromAsync(file, folder).ConfigureAwait(true);
+
+            LoadInto(project);
+            Remember(folder);
+
+            // Recovered work is *not* on disk in the project yet, so it is
+            // dirty by definition. Marking it clean would mean the one thing
+            // you must not do here: let it be closed again without a prompt.
+            _dirty = recovered;
+
+            Announce(
+                $"{(recovered ? "recovered work. " : string.Empty)}{project.Name}. "
+                + $"{project.Spine.Count} segments, {Timecode.Speak(_session.Map.Duration)}"
+                + (recovered ? ". Control S to keep it" : string.Empty),
+                urgent: true);
+        }
+        catch (Exception exception)
+        {
+            Announce($"could not open it: {exception.Message}", urgent: true);
+        }
+    }
 
     /// <summary>
     /// Saves in place when the project has a home, and asks where when it does
@@ -404,10 +439,15 @@ public sealed partial class MainWindow
     }
 
     /// <summary>
-    /// Saves a project that already has a home, quietly. It never prompts: a
-    /// project with nowhere to go is left alone rather than interrupting you to
-    /// ask where, and an autosave you have to answer is one you start
-    /// dismissing.
+    /// Saves a project that already has a home, quietly, <b>beside</b> the
+    /// project rather than over it. It never prompts: a project with nowhere to
+    /// go is left alone rather than interrupting you to ask where, and an
+    /// autosave you have to answer is one you start dismissing.
+    ///
+    /// It deliberately does not clear <c>_dirty</c>. The work is safe from a
+    /// crash but it is not in the file of record, and those are different
+    /// things - saying otherwise is what let an afternoon's abandoned
+    /// experiment overwrite the last deliberate save.
     /// </summary>
     private async Task Autosave()
     {
@@ -415,15 +455,54 @@ public sealed partial class MainWindow
 
         try
         {
-            await ProjectJson.SaveAsync(Project, path).ConfigureAwait(true);
+            await ProjectJson.SaveToAsync(Project, RecoveryFile.PathFor(path)).ConfigureAwait(true);
 
-            _dirty = false;
+            _autosaveFailed = false;
         }
-        catch (Exception)
+        catch (Exception exception)
         {
-            // Left dirty, so the next explicit save still writes and still says
-            // what went wrong.
+            // Said once, then not again until one succeeds. A quiet save that
+            // has been failing for an hour is worth interrupting for exactly
+            // once; every three minutes is how a warning gets ignored.
+            if (_autosaveFailed) return;
+
+            _autosaveFailed = true;
+
+            Announce($"autosave is failing: {exception.Message}", urgent: true);
         }
+    }
+
+    /// <summary>
+    /// Throws away everything since the last explicit save.
+    ///
+    /// The counterpart of autosave no longer overwriting the project: there is
+    /// now a saved state to go back to, so going back to it is a thing you can
+    /// ask for. It confirms first, and says what it is about to cost.
+    /// </summary>
+    private void RevertToSaved()
+    {
+        if (Project.RootPath is not { Length: > 0 } path
+            || !File.Exists(RecoveryFile.ProjectPathFor(path)))
+        {
+            Announce("this project has never been saved, so there is nothing to go back to", urgent: true);
+            return;
+        }
+
+        if (!_dirty)
+        {
+            // The specific thing rather than reverting to what is already
+            // loaded, which would look like it had worked and changed nothing.
+            Announce("nothing has changed since the last save", urgent: true);
+            return;
+        }
+
+        ConfirmThen(
+            $"Throw away every change to {Project.Name} since the last save?",
+            () =>
+            {
+                RecoveryFile.Clear(path);
+                _ = OpenFrom(path, RecoveryFile.ProjectPathFor(path), recovered: false);
+            });
     }
 
     private async Task WriteTo(string path)
@@ -431,6 +510,11 @@ public sealed partial class MainWindow
         try
         {
             await ProjectJson.SaveAsync(Project, path).ConfigureAwait(true);
+
+            // The work is now in the file of record, so the autosave beside it
+            // is stale. Left there, it would offer at the next open to replace
+            // this save with something older, in a dialog that sounds helpful.
+            RecoveryFile.Clear(path);
 
             Remember(path);
 

@@ -15,6 +15,10 @@ public static class CommandRegistry
         new("file.save", "Save", "Ctrl+S", CommandGroup.File, KeyOrigin.Universal,
             "Writes project.json and exports edit.md alongside it."),
         new("file.saveAs", "Save as", "Ctrl+Shift+S", CommandGroup.File, KeyOrigin.Universal),
+        new("file.revert", "Revert to the last save", "Ctrl+Shift+R", CommandGroup.File, KeyOrigin.Universal,
+            "Throws away every change since you last saved, and asks first. Autosave writes "
+            + "beside the project rather than over it, which is what makes a saved state "
+            + "there to go back to."),
         new("file.importMedia", "Import video or audio", "Ctrl+I", CommandGroup.File, KeyOrigin.Premiere,
             "Premiere uses Ctrl+I for Import."),
         new("file.reloadEdl", "Reload edit.md", "Ctrl+Shift+I", CommandGroup.File, KeyOrigin.Invented,
@@ -35,6 +39,10 @@ public static class CommandRegistry
         new("menu.context", "Context menu", "Applications", CommandGroup.Application, KeyOrigin.Windows,
             "Also Shift+F10. Contents depend on what is focused.", Alternate: "Shift+F10"),
         new("speech.verbosity", "Cycle verbosity", "Ctrl+Alt+V", CommandGroup.Application, KeyOrigin.Invented),
+        new("app.preferences", "Preferences", "Ctrl+Comma", CommandGroup.Application, KeyOrigin.Universal,
+            "Speech, saving, what a new project starts from, devices and where the tools "
+            + "are. Stream keys are not here - they are set in the streamer view and never "
+            + "read back."),
 
         // ---- function keys -----------------------------------------------------
         // One domain per key, stacked: plain does the common thing, Shift the
@@ -90,6 +98,23 @@ public static class CommandRegistry
             "How long, what is on it, and what still needs doing. Ctrl+Alt+D does the "
             + "same thing from anywhere, because it is worth asking outside the timeline.",
             Context: CommandContext.Global, Alternate: "Ctrl+Alt+D"),
+
+        new("review.describeShots", "Describe every shot in this take", "Ctrl+F8", CommandGroup.Review,
+            KeyOrigin.Invented,
+            "Finds where the picture changes and has each shot described once, so moving "
+            + "the cursor afterwards says what is on screen. Says how many it found before "
+            + "it starts, because each one is a call that takes a few seconds."),
+        new("review.shotDetail", "What is on screen here", "Ctrl+Alt+F8", CommandGroup.Review,
+            KeyOrigin.Invented,
+            "The whole description of the shot under the cursor, which the label spoken "
+            + "while moving is the short form of."),
+        new("cursor.nextShot", "Next shot change", "Ctrl+Shift+Right", CommandGroup.Navigation,
+            KeyOrigin.Invented,
+            "A cut inside a take is invisible and otherwise unfindable. This lands on the "
+            + "change itself, which is where a marker wants to go.",
+            Context: CommandContext.Timeline),
+        new("cursor.previousShot", "Previous shot change", "Ctrl+Shift+Left", CommandGroup.Navigation,
+            KeyOrigin.Invented, Context: CommandContext.Timeline),
 
         new("capture.describeShot", "What is in shot", "F8 while the viewfinder is open",
             CommandGroup.Capture, KeyOrigin.Invented,

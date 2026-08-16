@@ -47,15 +47,41 @@ public static class ProjectJson
     public static async Task SaveAsync(Project project, string directory, CancellationToken cancellationToken = default)
     {
         Directory.CreateDirectory(directory);
-        var path = Path.Combine(directory, FileName);
+
+        await SaveToAsync(project, Path.Combine(directory, FileName), cancellationToken).ConfigureAwait(false);
+
+        project.RootPath = directory;
+    }
+
+    /// <summary>
+    /// Writes to a named file rather than to a project directory, for the
+    /// autosave beside the project. It deliberately does not set
+    /// <see cref="Project.RootPath"/>: a quiet save must not change where the
+    /// project thinks it lives.
+    /// </summary>
+    public static async Task SaveToAsync(Project project, string path, CancellationToken cancellationToken = default)
+    {
+        Directory.CreateDirectory(Path.GetDirectoryName(path) ?? ".");
 
         // Write to a temp file and move, so a crash mid-save cannot leave a
         // half-written project behind.
         var temp = path + ".tmp";
         await File.WriteAllTextAsync(temp, Serialise(project), cancellationToken).ConfigureAwait(false);
         File.Move(temp, path, overwrite: true);
+    }
 
-        project.RootPath = directory;
+    /// <summary>
+    /// Reads a project from a named file, used to open a recovered autosave.
+    /// <paramref name="rootPath"/> is the project's home, which is the folder
+    /// rather than the file the work happened to be read out of.
+    /// </summary>
+    public static async Task<Project> LoadFromAsync(
+        string path, string rootPath, CancellationToken cancellationToken = default)
+    {
+        var project = Deserialise(await File.ReadAllTextAsync(path, cancellationToken).ConfigureAwait(false));
+        project.RootPath = rootPath;
+
+        return project;
     }
 
     public static async Task<Project> LoadAsync(string directory, CancellationToken cancellationToken = default)

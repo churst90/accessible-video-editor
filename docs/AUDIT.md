@@ -112,27 +112,67 @@ had been silently missing since they were written.
 playback is going, and only sets label text on rows that already exist. There is
 no per-tick rebuild.
 
+### Fixed in the 0.17.0 pass
+
+- **Autosave overwrote the project.** The one real data-safety bug in the tree.
+  `Autosave()` wrote straight to `project.json` and cleared the dirty flag, so
+  there was no way back to the last deliberate save and - despite the roadmap
+  listing crash-to-recovery as "untested" - **no recovered file to open at all.**
+  The item could not have been exercised even in principle. It now writes to
+  `project.autosave.json` beside the project; the explicit save is the file of
+  record and clears the recovery; `Ctrl+Shift+R` reverts; opening a folder with
+  a newer autosave beside it offers it and says how much newer.
+
+- **A failing autosave said nothing.** The `catch` swallowed and left the
+  project dirty, so a disk-full condition was inaudible until you pressed
+  Ctrl+S. Said once now, and not again until one succeeds.
+
+- **`AppSettings.Defaults` and `AppSettings.Devices` were read by nothing.**
+  Written and saved, and no behaviour followed - the settings version of a key
+  that does nothing when pressed, and the same class of fault as the nine
+  registry commands this file was written about. Both now arrive somewhere:
+  defaults stamp a new project, devices supply a track armed with no input of
+  its own.
+
+- **Two copies of verbosity and earcons.** `Behaviour` and `Defaults` each held
+  one; two copies of a setting disagree eventually, and the one the announcer
+  reads wins silently. `Behaviour` is now the single source and
+  `Preferences.ApplyDefaults` enforces it.
+
+- **`MANUAL.md` said `Ctrl+5` shows a record view.** There is no record view -
+  `Workspace.cs`, `Track.cs` and `CommandRegistry.cs` all say so deliberately -
+  and `Ctrl+5` is the streamer view. Written when it was true and never
+  re-checked, one pass after this file was written about exactly that.
+  `WiringTests` pins the *sources*; nothing pins the prose.
+
 ### Open, in the order they matter
 
-1. **`MainWindow` is 4,452 lines**, still the largest file. It is the only file in the tree that is
-   genuinely too big. It holds five views' key handlers, every command
-   registration and every dialog. The seam is obvious - each view already has a
-   `On…Key` method and a build method - and `StreamView`, `ImageView` and
-   `TimelineCanvas` show the shape the rest should follow. Nothing is wrong with
-   it; it is just where everything without a home ended up. The subclip, group,
-   multicam, sound and export commands went into `MainWindow.Library.cs` rather
-   than adding another 400 lines to it.
+1. **No video has been cut and published with this yet.** Now the largest open
+   item by some distance, and not a code one: everything here is tested, and
+   none of it has survived an actual edit from import to upload. That is the
+   test that finds what nobody thought to assert, and it is the deciding
+   criterion for 1.0.
 
-2. **`StreamView` at 1,083 lines** is heading the same way as the window did.
+2. **The Windows spike has never been run.** It is written and it compiles;
+   whether NVDA and JAWS can read a WPF `AutomationPeer` tree over a drawn
+   canvas is unknown, and it is the single fact that decides whether there is a
+   Windows client at all. A day on Windows answers it.
 
-3. **The whole of the "missing" list below has since been built** - subclips,
+3. **Nothing pins the manual.** `tests/WiringTests.cs` reads the GTK sources and
+   catches a menu item that reaches nothing, but the prose in `MANUAL.md` and
+   `ROADMAP.md` can still claim a key that does something else - and did, again,
+   this pass. A test that extracts the key tables from the manual and checks
+   them against `CommandRegistry` would close it permanently. It is the highest
+   value test not yet written.
+
+4. **`MainWindow` is 1,174 lines**, down from 4,452. `MainWindow.Keys.cs` at
+   1,030 and `StreamView` at 1,083 are now the largest, and both are coherent -
+   one is key dispatch and the other is one view. Nothing in the tree is over
+   1,200 lines. This is no longer a finding, only a number worth watching.
+
+5. **The whole of the "missing" list below has since been built** - subclips,
    compound segments, export presets, audio effects, change over time and
    multicam. Nothing on it remains.
-
-4. **No video has been cut and published with this yet.** It is the largest open
-   item and it is not a code one: everything here is tested, and none of it has
-   survived an actual edit from import to upload. That is the test that finds
-   what nobody thought to assert, and it is the deciding criterion for 1.0.
 
 ## 3. Comments and cleanliness
 
@@ -147,12 +187,17 @@ means framed, *why* ducking is off by default, *why* Twitch moderation cannot go
 over IRC. Those are worth their space; they are the reasoning that would
 otherwise be re-litigated.
 
-**Grade: A-.** Consistent naming, no dead code, no `TODO`s, no swallowed
-exceptions that hide a failure from the user, no `.Result` or `.Wait()`
-anywhere, and 796 tests that assert on behaviour and spoken output rather than
-on implementation. It is held back from an A by two files that are still larger
-than they should be - and, until this pass, by documentation that described a
-different application from the one in the repository.
+**Grade: A-.** Consistent naming, no dead code, no `TODO`s, no `.Result` or
+`.Wait()` anywhere, and 843 tests that assert on behaviour and spoken output
+rather than on implementation. The two oversized files are gone - `MainWindow`
+is 1,174 lines and nothing exceeds 1,200.
+
+It stays at A- rather than moving up, and the reason has changed. It is no
+longer file size. It is that **two separate passes have now found settings and
+prose that were written, saved, and read by nothing** - nine registry commands
+last time, `AppSettings.Defaults` and a manual key table this time. The code is
+good; what is missing is a check that catches the class of fault, and until the
+manual is pinned the way the menus are, a third pass will find a third one.
 
 **The lesson of this pass is about the documentation, not the code.** Every
 claim in `ROADMAP.md` and `MANUAL.md` was written when it was true and never

@@ -6,9 +6,9 @@ is.
 
 ---
 
-## Where this is, as of version 0.16.0
+## Where this is, as of version 0.17.0
 
-**Phases 1 to 16 are built.** 796 tests. The version's minor number is the
+**Phases 1 to 17 are built.** 843 tests. The version's minor number is the
 highest phase built, so it says how far through this list the application is
 rather than being a number that goes up.
 
@@ -17,29 +17,48 @@ rather than being a number that goes up.
 | | Size | Notes |
 |---|---|---|
 | **Toolbar for sighted collaborators** | Small | The only `[planned]` marker left in this file |
-| **Preferences window** | Medium | Everything is settings JSON today. See "Ongoing" |
 | **Workflows** — record and run | Medium | Model built and tested; no UI. Keys reserved |
 | **Nudge, move-to-track** | Small each | No verb in `EditOperations` yet. Keys reserved |
-| **A Windows head** | Large | Decided: WPF. Spike first — see [CLIENTS.md](CLIENTS.md) |
+| **Keymap remapping** | Medium | `CommandRegistry.Conflicts()` exists; the preferences window does not offer it, and overrides have nowhere to persist |
+| **A Windows head** | Large | Decided: WPF. **The spike is written** — see [CLIENTS.md](CLIENTS.md). It has never been run |
 | **A macOS head** | Large | After Windows. Native AppKit over a JSON-RPC Core |
-| **`MainWindow` is 4,452 lines** | Medium | The one file genuinely too big |
+
+`MainWindow` came down from 4,452 lines to 1,174, split at the seams that were
+already there. Nothing in the tree is over 1,200 lines now.
 
 ### What 1.0 would need
 
 Not a feature list — the things that make a version number mean something.
 
-1. **A whole video cut and published with it.** The deciding one. Everything
+1. **A whole video cut and published with it.** The deciding one, and now the
+   only one that is not either done or a single afternoon's work. Everything
    here is tested and none of it has yet survived an actual edit from import to
    upload, which is the only test that finds the things nobody thought to assert.
-2. **The preferences window**, because "edit this JSON file" is not a shipping
-   answer for verbosity, devices or render defaults.
+2. ~~The preferences window~~ — **built**, `Ctrl+,`.
 3. **A render that has been watched by someone sighted**, once. The measurements
    and descriptions are good and they are not a substitute for confirming that
    the picture is actually right.
-4. **Crash-to-recovery**: autosave exists; opening the recovered file after a
-   hard kill has not been exercised.
+4. **Crash-to-recovery** — the mechanism is **built and tested**; what remains
+   is exercising it for real, by killing the process hard and opening the folder
+   again. Worth knowing that this item was previously impossible rather than
+   untested: autosave wrote over `project.json`, so there was no recovered file
+   to open. It now writes beside it.
 5. Optionally, the Windows head — though a Linux-only 1.0 is honest, since that
    is what it is.
+
+### The spike that decides the Windows head
+
+Written, compiles clean, **never run**. `spikes/AccessibleVideoEditor.WpfSpike`
+is a four-track drawn scrubber with an `AutomationPeer` tree and an announcer
+over `RaiseNotificationEvent` at three priorities. It references `Core` and
+nothing else; every rectangle comes from `TimelineLayout` and every spoken
+string from `TrackProbe`, unchanged.
+
+It is deliberately **outside the solution**, because WPF does not build on Linux
+and the Linux client has to keep building on the machine it is developed on.
+`dotnet build -p:EnableWindowsTargeting=true` compiles it here; only Windows can
+answer whether NVDA and JAWS can read it. Its README is the test script and says
+what each way of failing means.
 
 Deliberately **not** on that list: bundling, installers, onboarding. This is a
 personal build and that decision has not changed.
@@ -801,6 +820,71 @@ differ. So is cutting to a camera that was not running at that moment.
 
 ---
 
+## Phase 17 — Knowing what is on screen **[built]**
+
+The last thing on the timeline that could not be read aloud.
+
+Cards announce their text, transitions announce their kind, segments announce
+their words. A shot of footage announced nothing, because the document does not
+know what is in it — it is a rectangle of pixels, and no amount of measurement
+turns that into "you at the desk, wide". This is the one place in the
+application where the answer genuinely requires eyes, and the only remaining
+question was how to spend them.
+
+### Shots, not frames **[built]**
+
+Sampling on a fixed interval would describe one unchanging shot forty times, at
+forty times the cost, in forty slightly different sets of words — so moving the
+cursor inside it would make the description flicker, which reads as the picture
+changing when it has not.
+
+A **shot** is the unit with an identity: the picture is the same thing from one
+cut to the next. `ShotDescriber` finds the changes with ffmpeg's own scene
+score, describes one frame per shot, and every position inside that shot gives
+the same answer. A twenty-minute take is tens of calls rather than hundreds.
+
+### Precomputed, never live **[built]**
+
+Describing a frame takes seconds. Moving the cursor takes milliseconds. A
+description fetched as you navigate arrives attached to a position you left
+several presses ago — and a confident description of the wrong moment is the one
+failure you cannot detect without sight.
+
+So it is the waveform cache's shape exactly: done once, in the background, keyed
+by the file's path, size and modification time, and read back out of a
+dictionary at navigation speed. Re-importing an edited file describes it again;
+opening the same project tomorrow costs nothing.
+
+### Said on boundary crossings only **[built]**
+
+Each shot carries **two** forms — a label of a few words and the full
+description — because the terse readout rule is not negotiable at navigation
+speed. Crossing into a new shot adds the label to the usual cursor readout;
+moving inside one is silent. `Ctrl+Alt+F8` gives the whole thing on demand.
+
+Returning to a shot whose words match an earlier one still announces. Staying
+silent because the label matched would mean a cut back to the wide reads as no
+cut at all.
+
+### Finding a cut you cannot see **[built]**
+
+`Ctrl+Shift+Left` / `Ctrl+Shift+Right` move to the previous or next shot change.
+This is what makes the feature worth building rather than a novelty: a cut
+inside a take was invisible and unfindable, and a marker you want to place *on*
+it could only be guessed at. The shot times are source times, so they go back
+through `TimelineMap.FromSource` — a change that was trimmed out of the edit
+says so rather than snapping somewhere.
+
+### The cost is stated and the work is asked for **[built]**
+
+Each shot is a call to Claude through the `claude` command. Doing that quietly
+on import would be spending someone's quota on a question they had not asked, so
+it is a key, it says how many shots it found *before* it starts, and it counts
+as it goes. A shot that could not be described still gets its timecode as a
+label — a blank announcement at a boundary reads as a missed keypress.
+
+---
+
 ## Candidate features — what other editors have that this does not
 
 Recorded so the list exists rather than being rediscovered. Each notes how it
@@ -832,11 +916,21 @@ shape and needs rethinking rather than adapting.
 
 ## Ongoing — things that are not a phase
 
-- **Preferences window**: verbosity, step-size defaults, snapping, ripple mode,
-  earcons on/off, device defaults, render presets, keymap remapping. Every
-  setting reachable from the command palette too.
+- **Preferences window** **[built]** — `Ctrl+,`. Speech, saving, what a new
+  project starts from, devices, chat and tool paths. Built out of native form
+  controls rather than spoken lists, because a checkbox is not a control that
+  needed replacing and GTK already exposes one correctly. A save says *what
+  changed*, and values that would fail somewhere far away — a zero frame rate,
+  an odd canvas width — are corrected here and said out loud.
+  - Building it turned up that `AppSettings.Defaults` and `AppSettings.Devices`
+    were **written, saved, and read by nothing**: the settings version of a key
+    that does nothing when pressed. They now reach a new project and a newly
+    armed track respectively.
+  - **Keymap remapping is not in it.** `CommandRegistry.Conflicts()` exists, but
+    an override has nowhere to persist, and a remapping page that forgets is
+    worse than none.
 - **Keymap remapping** from the registry, with conflict detection already
-  available as `CommandRegistry.Conflicts()` **[built]**
+  available as `CommandRegistry.Conflicts()` **[model built]**
 - **Undo history as a navigable list** — jump back to a point rather than
   pressing Ctrl+Z hopefully
 - **Markers with types** — to-do, issue, chapter, note. Chapters export to a

@@ -2,6 +2,131 @@
 
 Newest first. Dates are when the work landed.
 
+## 0.17.0 — knowing what is on screen, preferences, and a save you can go back to
+
+843 tests, up from 796.
+
+### Phase 17: what is on screen, said as you move
+
+The last thing on the timeline that could not be read aloud. Cards announce
+their text and transitions announce their kind; a shot of footage announced
+nothing, because the document does not know what is in it.
+
+`Ctrl+F8` finds where the picture changes in the take under the cursor and has
+each shot described once. After that, moving the cursor says what is on screen
+**when it changes** — at the same speed as everything else, because the answers
+are already there.
+
+Three decisions carry it:
+
+- **Shots, not frames.** Sampling on an interval would describe one unchanging
+  shot forty times in forty slightly different sets of words, so moving inside
+  it would make the description flicker — which reads as the picture changing
+  when it has not. A shot is the unit with an identity.
+- **Precomputed, never live.** Describing takes seconds; moving takes
+  milliseconds. A description fetched as you navigate arrives attached to a
+  position you left several presses ago, and a confident description of the
+  wrong moment is the one failure you cannot detect without sight. It is the
+  waveform cache's shape exactly, keyed by the file's size and modification
+  time.
+- **Boundary crossings only.** Each shot carries a short label and a full
+  description. The label joins the cursor readout when the shot changes;
+  `Ctrl+Alt+F8` gives the whole thing on demand. Four sentences on every arrow
+  press would make the timeline unusable.
+
+**`Ctrl+Shift+Left` and `Ctrl+Shift+Right` move to the previous and next shot
+change**, which is the part that changes what you can do rather than what you
+can hear: a cut inside a take was invisible and unfindable, and a marker you
+wanted to put on it could only be guessed at.
+
+Each shot is one call to Claude through the `claude` command, so it never runs
+by itself: it says how many shots it found before it starts, counts as it goes,
+and never describes the same footage twice.
+
+### The preferences window
+
+`Ctrl+,`. Everything that used to mean editing `settings.json` by hand — the
+last item on the 1.0 list that was a feature rather than an afternoon.
+
+It is the one window built out of ordinary form controls rather than lists and
+spoken verbs. Everywhere else a visual control is replaced because no accessible
+equivalent exists; a checkbox has no such problem, and GTK already announces
+one correctly with its role and its state. Inventing a spoken list here would
+mean re-implementing, worse, something the toolkit does properly.
+
+Two things it does that a preferences window usually does not:
+
+- **A save says what changed** — *"settings saved. Speech is verbose, and
+  autosave is off."* Hearing nothing after pressing Save is indistinguishable
+  from a save that failed. A save that changed nothing says that too.
+- **Values that would fail somewhere else are corrected here, out loud.** A zero
+  frame rate is accepted by a spin button and rejected by ffmpeg an hour later
+  in a message about a filtergraph; an odd canvas width cannot be encoded at
+  all.
+
+Building it found that **`AppSettings.Defaults` and `AppSettings.Devices` were
+written, saved, and read by nothing** — the settings version of a key that does
+nothing when pressed. They now reach a new project and a newly armed track,
+and a track that takes a default input says *"from preferences"* so you can tell
+a default from a choice.
+
+Stream keys are deliberately absent: they live in a separate file with tighter
+permissions, and a settings window that could read one back would undo that.
+
+### Autosave stopped overwriting your project
+
+The one genuine data-safety bug in the tree. Autosave wrote straight over
+`project.json` and cleared the unsaved flag, which had two consequences that
+only appear on the day they matter:
+
+1. **There was no way back to the last deliberate save.** Try an idea for ten
+   minutes, decide against it, close without saving — it had already been
+   written three minutes ago.
+2. **There was nothing to recover.** The roadmap listed crash-to-recovery as
+   untested; it could not have been tested, because the autosave *was* the
+   project. There was no recovered file to open.
+
+Autosave now writes to `project.autosave.json` **beside** the project. The
+explicit save stays the file of record and clears the recovery, so a stale one
+can never offer to replace good work with older work.
+
+- **`Ctrl+Shift+R` reverts to the last save**, and asks first.
+- **Opening a project with a newer autosave beside it offers it**, saying how
+  much newer: *"open the recovered work, 12 minutes newer than the last save?
+  Choosing no opens the saved project and leaves the recovery alone."* Recovered
+  work opens **unsaved**, because it is not in the project file yet.
+- A failing autosave says so **once**, not every three minutes. It used to say
+  nothing at all.
+
+### `MainWindow` is 1,174 lines
+
+Down from 4,452, split at the seams that were already there — each view had its
+own `On…Key` and build method, and that is where the cuts went: `Keys`,
+`Capture`, `Media`, `Views`, `Commands`, `Dialogs`, `Transcript`, `Playback`,
+`ImageCommands`, `Preferences`, `Shots`. Nothing in the tree is over 1,200 lines
+now. No behaviour changed; the suite was green before and after every move.
+
+### The Windows spike exists
+
+`spikes/AccessibleVideoEditor.WpfSpike` — a four-track drawn scrubber with an
+`AutomationPeer` tree and an announcer over `RaiseNotificationEvent` at three
+priorities. It references `Core` and nothing else: every rectangle from
+`TimelineLayout`, every spoken string from `TrackProbe`, the stepping from
+`TimelineNavigator`, none of it rewritten for Windows.
+
+It is **outside the solution**, because WPF does not build on Linux and the
+Linux client has to keep building. It compiles here via
+`-p:EnableWindowsTargeting=true`, cleanly. **It has never been run**, and that
+is the whole point: its README is the test script, in order, saying what each
+way of failing means and what each result decides.
+
+### Also
+
+`MANUAL.md` claimed `Ctrl+5` showed a record view. There is no record view —
+three separate comments in the source say so deliberately — and `Ctrl+5` is the
+streamer view. Written when it was true, never re-checked; exactly the drift the
+last audit was about, one pass later.
+
 ## 0.16.0 — position and opacity over time, and a version that means something
 
 ### Movement on an overlay

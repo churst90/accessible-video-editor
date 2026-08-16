@@ -25,7 +25,7 @@ public static class Menus
 
         bar.AppendSubmenu("_File", Section(
             [("file.new", "win.new"), ("file.open", "win.open"), ("file.recent", "win.recent")],
-            [("file.save", "win.save"), ("file.saveAs", "win.saveAs")],
+            [("file.save", "win.save"), ("file.saveAs", "win.saveAs"), ("file.revert", "win.revert")],
             [("file.importMedia", "win.import"), ("file.reloadEdl", "win.reloadEdl")],
             [("render.draft", "win.renderDraft"), ("render.master", "win.export"),
              ("render.presets", "win.renderPresets")],
@@ -67,6 +67,8 @@ public static class Menus
             [("edit.marker", "win.marker"), ("marker.remove", "win.removeMarker"),
              ("marker.list", "win.markerList")],
             [("review.issues", "win.issues"), ("review.describeEdit", "win.describeEdit")],
+            [("review.describeShots", "win.describeShots"), ("review.shotDetail", "win.shotDetail"),
+             ("cursor.previousShot", "win.previousShot"), ("cursor.nextShot", "win.nextShot")],
             [("transcript.find", "win.find")]));
 
         bar.AppendSubmenu("_Insert", Section(
@@ -81,7 +83,7 @@ public static class Menus
             [("granularity.coarser", "win.zoomOut"), ("granularity.finer", "win.zoomIn")],
             [("cursor.where", "win.whereAmI"), ("speech.verbosity", "win.verbosity")],
             [("capture.output", "win.chooseOutput")],
-            [("palette.open", "win.palette")]));
+            [("palette.open", "win.palette"), ("app.preferences", "win.preferences")]));
 
         bar.AppendSubmenu("_Timeline", Section(
             [("cursor.previousSegment", "win.previousSegment"), ("cursor.nextSegment", "win.nextSegment")],
@@ -217,6 +219,7 @@ public static class Menus
         ("file.open", "win.open"),
         ("file.save", "win.save"),
         ("file.saveAs", "win.saveAs"),
+        ("file.revert", "win.revert"),
         ("file.importMedia", "win.import"),
         ("file.exit", "win.quit"),
         ("edit.undo", "win.undo"),
@@ -225,6 +228,7 @@ public static class Menus
         ("edit.paste", "win.paste"),
         ("render.master", "win.export"),
         ("palette.open", "win.palette"),
+        ("app.preferences", "win.preferences"),
     ];
 
     /// <summary>
